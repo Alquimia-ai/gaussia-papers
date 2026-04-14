@@ -1,0 +1,189 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\title{Regulatory Compliance Metric}
+\author{Alquimia AI}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Regulatory Compliance Metric}
+
+The Regulatory Compliance Metric evaluates whether an AI assistant's responses adhere to a corpus of regulatory documents. Rather than relying on an LLM judge, this metric grounds its evaluation in a retrieval-augmented pipeline: relevant passages are retrieved from the regulatory corpus and then scored against the assistant's response using a neural reranker. This design keeps evaluation transparent and auditable, producing verdicts that are directly traceable to specific regulatory passages.
+
+\subsection{Motivation}
+
+Deployed AI assistants in regulated domains---such as healthcare, finance, or legal services---must produce responses that align with governing regulations, policies, and compliance requirements. A mismatch between an assistant's output and a regulatory document may constitute a compliance violation, regardless of how fluent or helpful the response appears. The Regulatory Compliance Metric addresses this gap by treating the regulatory corpus as a ground truth and quantifying the degree to which each assistant response is supported or contradicted by that corpus.
+
+\subsection{Retrieval-Augmented Evaluation Pipeline}
+
+The evaluation pipeline proceeds in three stages: corpus ingestion, chunk retrieval, and contradiction checking.
+
+\subsubsection{Corpus Ingestion and Chunking}
+
+Regulatory documents are loaded via a \texttt{CorpusConnector} abstraction and chunked into fixed-size overlapping windows by the \texttt{DocumentRetriever}. Given a document of length $L$ characters, chunk size $c$, and overlap $o$, the $k$-th chunk spans characters $[k(c - o),\; k(c - o) + c]$. Consecutive whitespace normalization is applied before chunking to reduce noise. The total number of chunks across all documents constitutes the retrieval index.
+
+All chunk texts are encoded into dense vectors by an \texttt{Embedder} instance. The \texttt{Embedder} interface exposes two encoding methods: \texttt{encode} for documents and \texttt{encode\_query} for queries, allowing implementations to apply instruction prefixes or asymmetric encoding strategies typical of bi-encoder retrieval models~\cite{reimers2019sentencebert}.
+
+\subsubsection{Merged Chunk Retrieval}
+
+For each interaction, the retriever issues two separate embedding lookups---one against the user query $Q$ and one against the assistant response $A$---and merges the results:
+
+\begin{equation}
+    \mathcal{C}(Q, A) = \text{deduplicate}\!\left(\text{retrieve}(Q) \cup \text{retrieve}(A)\right)
+\end{equation}
+
+where deduplication retains, for each unique (source, chunk\_index) pair, the chunk with the highest cosine similarity. This dual-query strategy ensures that chunks relevant to the question's subject matter and chunks topically aligned with the assistant's claims are both surfaced.
+
+Cosine similarity is used as the retrieval scoring function. Let $\mathbf{q}$ be the query embedding and $\mathbf{d}_i$ the embedding of the $i$-th chunk; only chunks satisfying $\text{sim}(\mathbf{q}, \mathbf{d}_i) \geq \tau_s$ are retained, where $\tau_s$ is the configurable similarity threshold (default $\tau_s = 0.3$). The top-$k$ chunks by similarity are forwarded to the contradiction checker (default $k = 10$).
+
+\subsubsection{Contradiction Checking via Reranking}
+
+The retrieved chunks are re-scored by a \texttt{Reranker} that computes a relevance score $r_i \in [0, 1]$ for each chunk $\mathbf{c}_i$ with respect to the assistant response $A$. A cross-encoder architecture is typical here, as it jointly encodes the document-response pair rather than relying on independent embeddings~\cite{nogueira2019passage}.
+
+Each chunk is assigned a binary verdict based on a configurable contradiction threshold $\tau_c$ (default $\tau_c = 0.6$):
+
+\begin{equation}
+    v_i = \begin{cases}
+        \texttt{SUPPORTS}     & \text{if } r_i \geq \tau_c \\
+        \texttt{CONTRADICTS}  & \text{if } r_i < \tau_c
+    \end{cases}
+\end{equation}
+
+\subsection{Interaction-Level Verdict and Compliance Score}
+
+Let $n_s$ and $n_c$ denote the number of supporting and contradicting chunks for a given interaction, respectively, and $n_t = n_s + n_c$ the total number of retrieved chunks.
+
+If no chunks are retrieved ($n_t = 0$), the interaction is assigned an \texttt{IRRELEVANT} verdict, indicating that the regulatory corpus does not cover the topic of the query-response pair. Otherwise, the raw compliance score is:
+
+\begin{equation}
+    s = \frac{n_s}{n_t}
+\end{equation}
+
+The interaction-level verdict is then determined by comparing $s$ against a compliance threshold $\tau_p$ (default $\tau_p = 0.5$):
+
+\begin{equation}
+    \text{verdict} = \begin{cases}
+        \texttt{NON\_COMPLIANT} & \text{if } n_c > 0 \text{ and } n_s = 0 \\
+        \texttt{COMPLIANT}      & \text{if } s \geq \tau_p \\
+        \texttt{NON\_COMPLIANT} & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+The first branch ensures that any interaction where every retrieved chunk contradicts the response is immediately classified as non-compliant, regardless of the threshold.
+
+\subsection{Session-Level Aggregation}
+
+Interaction-level compliance scores are aggregated to a session-level metric using a pluggable \texttt{StatisticalMode} interface that supports both frequentist and Bayesian paradigms. For a session with $n$ interactions producing scores $s_1, \ldots, s_n$ and weights $w_1, \ldots, w_n$:
+
+\paragraph{Frequentist Mode.} Returns the weighted mean compliance score:
+
+\begin{equation}
+    \bar{s} = \sum_{i=1}^{n} w_i \cdot s_i
+\end{equation}
+
+\paragraph{Bayesian Mode.} Returns a bootstrapped posterior with credible intervals. Given the score vector $\mathbf{s} = (s_1, \ldots, s_n)$ and weight vector $\mathbf{w} = (w_1, \ldots, w_n)$, we draw $S$ Monte Carlo bootstrap samples (default $S = 5000$):
+
+\begin{equation}
+    \bar{s}^{(k)} = \frac{1}{n} \sum_{j=1}^{n} s_{I_j^{(k)}}, \quad I_j^{(k)} \sim \text{Categorical}(\mathbf{w}), \quad k = 1, \ldots, S
+\end{equation}
+
+The session-level compliance is then reported with a credible interval:
+
+\begin{equation}
+    \hat{s} = \mathbb{E}[\bar{s}^{(k)}], \quad \text{CI}_{1-\alpha} = \left[ Q_{\alpha/2}(\bar{s}^{(k)}), \; Q_{1-\alpha/2}(\bar{s}^{(k)}) \right]
+\end{equation}
+
+where $Q_p$ denotes the $p$-th quantile of the bootstrap distribution and $\alpha = 0.05$ for 95\% credible intervals.
+
+The session-level verdict mirrors the interaction-level logic: if all interactions are \texttt{IRRELEVANT}, the session is \texttt{IRRELEVANT}; otherwise, the session is \texttt{COMPLIANT} if $\bar{s} \geq \tau_p$ and \texttt{NON\_COMPLIANT} otherwise.
+
+\subsection{Data Representation}
+
+Evaluation results are represented through a typed schema hierarchy:
+
+\begin{enumerate}
+    \item \textbf{RegulatoryChunk}: Stores a single retrieved chunk with its full provenance:
+    \begin{itemize}
+        \item \texttt{text}, \texttt{source}, \texttt{chunk\_index}: The chunk content and its location within the corpus
+        \item \texttt{similarity}: Cosine similarity from embedding retrieval ($\in [0, 1]$)
+        \item \texttt{reranker\_score}: Cross-encoder score against the assistant response ($\in [0, 1]$)
+        \item \texttt{verdict}: \texttt{SUPPORTS} or \texttt{CONTRADICTS}
+    \end{itemize}
+    \item \textbf{RegulatoryInteraction}: Per-interaction result containing the compliance score, verdict, supporting and contradicting chunk counts, the full list of \texttt{RegulatoryChunk} records, and a human-readable \texttt{insight} string.
+    \item \textbf{RegulatoryMetric}: Session-level aggregate containing:
+    \begin{itemize}
+        \item \texttt{session\_id} and \texttt{assistant\_id}: Session and assistant identifiers
+        \item \texttt{n\_interactions}: Total number of interactions evaluated
+        \item \texttt{compliance\_score}: Aggregated session compliance score $\bar{s}$
+        \item \texttt{compliance\_score\_ci\_low}, \texttt{compliance\_score\_ci\_high}: Credible interval bounds (Bayesian mode only; \texttt{None} otherwise)
+        \item \texttt{verdict}: Session-level \texttt{COMPLIANT}, \texttt{NON\_COMPLIANT}, or \texttt{IRRELEVANT}
+        \item \texttt{total\_supporting\_chunks}, \texttt{total\_contradicting\_chunks}: Corpus-level evidence summary
+        \item \texttt{interactions}: Full list of \texttt{RegulatoryInteraction} records for drill-down analysis
+    \end{itemize}
+\end{enumerate}
+
+All schemas are implemented as Pydantic~\cite{pydantic2024} models with strict field validation (e.g., \texttt{compliance\_score: float = Field(ge=0, le=1)}), ensuring that scores remain within well-defined bounds throughout the evaluation pipeline.
+
+\subsection{Architectural Considerations}
+
+The regulatory pipeline follows the same dependency inversion and strategy patterns used throughout the framework. The \texttt{Embedder} and \texttt{Reranker} abstractions are defined as abstract base classes; concrete implementations are injected at construction time, decoupling the pipeline from any specific model provider. This allows practitioners to substitute, for example, a local sentence-transformer embedder with a cloud-hosted embedding API without modifying the evaluation logic.
+
+The corpus is loaded lazily on the first call to \texttt{batch()}, ensuring that initialization cost is deferred until evaluation actually begins. Subsequent calls reuse the pre-built embedding index, so the $O(|D|)$ embedding cost is paid only once per \texttt{Regulatory} instance regardless of the number of sessions evaluated.
+
+\section{Proposed Experiments}
+
+A key open question in deploying the Regulatory Compliance Metric is how the choice of embedding model and reranker jointly affect the quality of retrieval and contradiction detection. We propose a benchmark that systematically evaluates these components against a fixed regulatory target.
+
+\subsection{Experimental Setup}
+
+We select the EU AI Act~\cite{euaiact2024} as the target regulatory corpus, given its breadth, public availability, and practical relevance to AI system evaluation. A human-annotated test set is constructed as follows:
+
+\begin{enumerate}
+    \item A set of $N$ query-response pairs is sampled from a conversational AI system operating in a regulated domain.
+    \item For each pair, domain experts label the subset of EU AI Act articles that are normatively relevant to the assistant's response.
+    \item Each labeled article is further annotated with a binary verdict---\texttt{SUPPORTS} or \texttt{CONTRADICTS}---indicating whether the article's normative content is consistent with the response.
+\end{enumerate}
+
+This annotated set serves as the ground truth for evaluating both retrieval quality and contradiction detection accuracy.
+
+\subsection{Embedding Model Comparison}
+
+We evaluate a set of bi-encoder embedding models spanning different architectures, training objectives, and parameter counts. Candidate models include general-purpose sentence encoders (e.g., \texttt{all-mpnet-base-v2}), instruction-tuned variants (e.g., \texttt{e5-large-instruct}), and domain-adapted legal embedders where available. For each model, retrieval quality is measured using standard information retrieval metrics computed against the ground-truth relevant articles:
+
+\begin{itemize}
+    \item \textbf{Recall@$k$}: Fraction of ground-truth relevant chunks retrieved within the top-$k$ results. This is the primary metric, as missing a relevant article is a more critical failure than including an irrelevant one.
+    \item \textbf{Mean Reciprocal Rank (MRR)}: Average reciprocal rank of the first relevant chunk across queries, measuring how highly relevant content is ranked.
+    \item \textbf{Normalized Discounted Cumulative Gain (nDCG@$k$)}: Ranking quality accounting for graded relevance across positions.
+\end{itemize}
+
+\subsection{Reranker Comparison}
+
+Given a fixed retrieval set (top-$k$ chunks from the best-performing embedding model), we evaluate a set of cross-encoder rerankers on their ability to correctly classify each chunk as \texttt{SUPPORTS} or \texttt{CONTRADICTS}. Candidate rerankers include general cross-encoders (e.g., \texttt{cross-encoder/ms-marco-MiniLM-L-6-v2}), larger rerankers (e.g., \texttt{bge-reranker-large}), and any available models fine-tuned on legal or regulatory text. Evaluation metrics are:
+
+\begin{itemize}
+    \item \textbf{Classification F1}: Macro-averaged F1 over the \texttt{SUPPORTS} / \texttt{CONTRADICTS} binary classification task, using the ground-truth annotations as labels.
+    \item \textbf{Threshold sensitivity}: F1 as a function of the contradiction threshold $\tau_c \in [0, 1]$, identifying the operating point that maximises performance on the target corpus.
+    \item \textbf{Precision-Recall curve}: Full curve across thresholds, allowing practitioners to trade off false positives (over-flagging compliant responses) against false negatives (missing genuine violations).
+\end{itemize}
+
+\subsection{Joint Evaluation}
+
+Finally, we evaluate embedding-reranker combinations end-to-end using the session-level compliance score as the outcome variable. For each pair, the predicted session verdict (\texttt{COMPLIANT} / \texttt{NON\_COMPLIANT}) is compared against a human-assigned session verdict, and overall accuracy and Cohen's $\kappa$ are reported. This joint evaluation captures interaction effects: a strong reranker may compensate for weaker retrieval, and vice versa, so individual component scores do not necessarily predict end-to-end performance.
+
+Results are expected to inform practical recommendations for corpus-specific model selection, and to surface whether domain-adapted models provide meaningful gains over general-purpose alternatives on regulatory text.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

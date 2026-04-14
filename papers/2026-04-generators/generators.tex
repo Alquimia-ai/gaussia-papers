@@ -1,0 +1,475 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cite}
+\usepackage{natbib}
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    frame=single,
+    backgroundcolor=\color{lightgray!30}
+}
+
+\title{Scalable Synthetic Dataset Generation for AI Evaluation}
+
+\author{Alquimia AI}
+
+\date{\today}
+
+\pagestyle{fancy}
+\fancyhf{}
+\chead{\textit{Scalable Synthetic Dataset Generation for AI Evaluation}}
+\rfoot{\thepage}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+Creating high-quality test datasets for evaluating AI assistants and language models is a fundamental challenge in AI systems development. Manual dataset creation is expensive, time-consuming, and does not scale with the need for diverse, comprehensive evaluation scenarios. This paper introduces the Gaussia Generators module, an automated pipeline for scalable synthetic dataset generation from unstructured context documents. Our approach combines intelligent document chunking (header-based and size-aware segmentation), pluggable chunk selection strategies, and LLM-driven query and conversation synthesis to produce standardized, reusable evaluation datasets.
+
+We present two core generation modes: (1) independent query generation for diverse question coverage, and (2) coherent multi-turn conversation generation for conversational AI evaluation. Our modular architecture supports multiple chunk selection strategies including sequential processing and random sampling, enabling flexible dataset creation tailored to specific evaluation needs. Additionally, we introduce the ``roast me'' evaluation paradigm, where adversarial and edge-case queries are systematically generated to probe agent resilience and consistency. The generator produces Gaussia-compatible Dataset objects suitable for immediate use with existing evaluation metrics. Experimental results demonstrate that synthetically generated datasets provide diverse evaluation coverage from knowledge bases while maintaining grounding in source material. We implement the Gaussia Generators module in Python with LangChain integration, making it accessible to practitioners building AI evaluation pipelines.
+
+\keywords{synthetic data generation, dataset creation, LLM evaluation, automated testing, AI benchmarking}
+
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Problem Statement}
+
+Evaluating AI assistants and language models requires high-quality, diverse test datasets. Current approaches to dataset creation face significant challenges:
+
+\begin{enumerate}
+    \item \textbf{Manual Annotation Bottleneck}: Human-curated datasets require substantial expert effort, limiting scalability and increasing costs. For complex evaluation domains (legal, medical, technical documentation), expert knowledge is mandatory, making manual curation prohibitively expensive.
+
+    \item \textbf{Limited Coverage}: Hand-created datasets inevitably have biases and gaps, potentially missing edge cases, contradictory scenarios, or adversarial conditions that would reveal model weaknesses.
+
+    \item \textbf{Maintenance Burden}: As knowledge bases, documentation, and requirements evolve, datasets become outdated. Keeping evaluation datasets synchronized with domain content requires continuous re-annotation.
+
+    \item \textbf{Lack of Grounding}: Synthetic queries generated without reference to source material may be disconnected from real-world usage patterns or miss domain-specific subtleties.
+
+    \item \textbf{Scalability Constraint}: Organizations with large, evolving knowledge bases (technical documentation, product specifications, compliance manuals) cannot feasibly create and maintain evaluation datasets manually.
+\end{enumerate}
+
+\subsection{Proposed Solution}
+
+We present the Gaussia Generators module, an automated, scalable pipeline for synthetic dataset generation that addresses these challenges through:
+
+\begin{enumerate}
+    \item \textbf{Intelligent Document Chunking}: A hybrid chunking strategy that respects document structure (markdown headers) while gracefully handling long sections through size-aware segmentation.
+
+    \item \textbf{Pluggable Selection Strategies}: Composable strategies for grouping and selecting chunks, enabling different generation patterns (sequential, random sampling, clustering-based, etc.) without modifying core generation logic.
+
+    \item \textbf{LLM-Driven Synthesis}: Leveraging large language models (via LangChain) to generate diverse, contextually grounded queries and coherent multi-turn conversations.
+
+    \item \textbf{Configurable Generation Modes}: Support for both independent query generation (maximizing diversity) and coherent conversation generation (testing dialogue continuity and context management).
+
+    \item \textbf{Adversarial Query Generation}: Extension to the ``roast me'' paradigm, where custom system prompts and selection strategies enable systematic generation of edge-case and adversarial queries to evaluate agent resilience.
+
+    \item \textbf{Seamless Integration}: Output in standardized Gaussia Dataset format, enabling immediate use with existing evaluation metrics and pipelines.
+\end{enumerate}
+
+\subsection{Contributions}
+
+This work makes the following contributions:
+
+\begin{itemize}
+    \item A modular architecture for synthetic dataset generation with extensible chunk selection strategies.
+    \item A hybrid document chunking strategy balancing structural awareness with practical size constraints.
+    \item Dual generation modes: independent queries for breadth and coherent conversations for dialogue evaluation.
+    \item Introduction of the ``roast me'' evaluation paradigm for systematic adversarial testing.
+    \item An open-source Python implementation integrated with the Gaussia evaluation framework.
+    \item Practical guidance on deploying LLM-powered dataset generation for real-world evaluation pipelines.
+\end{itemize}
+
+\section{Related Work}
+
+\subsection{Dataset Generation}
+
+Synthetic data generation has been explored across multiple domains. In machine learning, work by \cite{goodfellow2014generative} on generative adversarial networks established foundations for synthetic data creation. In NLP, recent work has focused on task-specific generation:
+
+\begin{itemize}
+    \item \textbf{Prompt-Based Generation}: Using language models to generate synthetic training and evaluation data from prompts \cite{karimi2021aeda, yuan2020bartscore}.
+
+    \item \textbf{Paraphrasing and Augmentation}: Techniques like EDA (Easy Data Augmentation) \cite{wei2019eda} and backtranslation \cite{sennrich2015improving} generate variations of existing data.
+
+    \item \textbf{Template-Based Synthesis}: Structured generation from templates for specific tasks \cite{wang2018glue}.
+\end{itemize}
+
+DeepEval's Synthesizer \cite{deepeval2024} provides diverse generation strategies including decomposition, contextual, multi-hops, and reasoning-based synthesis. Our work builds on similar principles while emphasizing document-grounded generation and composable selection strategies.
+
+\subsection{Evaluation Frameworks}
+
+Recent evaluation frameworks highlight the importance of diverse, scalable datasets:
+
+\begin{itemize}
+    \item \textbf{DeepEval}: An LLM evaluation framework with synthetic data generation and metric evaluation \cite{deepeval2024}.
+
+    \item \textbf{RAGAS}: A framework for evaluating RAG systems with task-specific metrics \cite{ragas2024}.
+\end{itemize}
+
+Our generators module specifically targets Gaussia metrics but is designed to be generally applicable.
+
+\subsection{Document Chunking}
+
+Effective document segmentation is critical for retrieval and synthesis tasks. Approaches include:
+
+\begin{itemize}
+    \item \textbf{Fixed-Size Chunks}: Simple but structure-agnostic \cite{lewis2019retrieval}.
+
+    \item \textbf{Semantic Chunking}: Using embeddings or semantic similarity to preserve meaning \cite{chen2023llamaindex}.
+
+    \item \textbf{Structure-Aware Chunking}: Respecting document hierarchy (headers, sections) \cite{zhong2022structured}.
+\end{itemize}
+
+Our hybrid approach combines structure-awareness with size constraints for practical effectiveness.
+
+\section{Methodology}
+
+\subsection{Architecture Overview}
+
+The Gaussia Generators pipeline consists of three main components:
+
+\begin{enumerate}
+    \item \textbf{Context Loader}: Reads source documents and partitions them into chunks.
+    \item \textbf{Selection Strategy}: Groups chunks according to a pluggable strategy.
+    \item \textbf{Generator}: Synthesizes queries or conversations from chunk groups using an LLM.
+\end{enumerate}
+
+Each component is independently replaceable, enabling extensibility without modifying existing code (Open/Closed Principle).
+
+\subsubsection{Context Loading}
+
+\paragraph{Hybrid Chunking Strategy}
+
+The \texttt{LocalMarkdownLoader} implements a two-stage chunking algorithm:
+
+\begin{algorithm}[H]
+\caption{Hybrid Markdown Chunking}
+\begin{algorithmic}[1]
+\State \textbf{Input}: markdown content $C$, header levels $H$, max chunk size $M_{max}$, min chunk size $M_{min}$
+\State \textbf{Output}: chunks $\mathcal{X} = \{x_1, x_2, \ldots, x_n\}$
+
+\State \Comment{Stage 1: Header-based splitting}
+\State sections $\gets$ split($C$, regex patterns for headers in $H$)
+
+\State chunks $\gets \{\}$
+\For{each section $s \in$ sections}
+    \If{len($s$) $>$ $M_{max}$}
+        \State \Comment{Stage 2: Size-based splitting with overlap}
+        \State sub\_chunks $\gets$ split\_by\_size($s$, $M_{max}$, $M_{min}$, overlap)
+        \State chunks $\gets$ chunks $\cup$ sub\_chunks
+    \Else
+        \State chunks $\gets$ chunks $\cup \{s\}$
+    \EndIf
+\EndFor
+
+\State \Return chunks
+\end{algorithmic}
+\end{algorithm}
+
+Key characteristics:
+
+\begin{itemize}
+    \item \textbf{Header-Driven}: Respects markdown structure by splitting on headers (H1, H2, H3, etc.). Each section becomes a chunk.
+
+    \item \textbf{Overflow Handling}: If a section exceeds $M_{max}$ characters, it is recursively split by size with paragraph and sentence boundary awareness.
+
+    \item \textbf{Overlap}: Size-based splits maintain configurable character overlap to preserve context continuity.
+
+    \item \textbf{Metadata Preservation}: Chunks retain metadata (source file, header context, chunking method) for traceability and filtering.
+\end{itemize}
+
+\subsubsection{Chunk Selection Strategies}
+
+A \texttt{BaseChunkSelectionStrategy} defines how chunks are grouped for processing. Each yielded group becomes a separate dataset.
+
+\paragraph{Sequential Strategy}
+
+The default \texttt{SequentialStrategy} yields all chunks as a single group:
+
+$$\text{select}(\mathcal{X}) = [\mathcal{X}] \quad \text{(single group containing all chunks)}$$
+
+This maintains backward compatibility and is appropriate when the full context is required for each evaluation scenario.
+
+\paragraph{Random Sampling Strategy}
+
+The \texttt{RandomSamplingStrategy} generates $n_{samples}$ random subsets of size $k_{sample}$:
+
+$$\text{select}(\mathcal{X}) = [S_1, S_2, \ldots, S_{n_{samples}}] \quad \text{where } S_i \sim \text{Sample}(\mathcal{X}, k, \text{with/without replacement})$$
+
+This is useful for:
+
+\begin{itemize}
+    \item Testing model robustness across different context subsets.
+    \item Creating diverse evaluation scenarios from a single knowledge base.
+    \item Reducing computational cost by sampling smaller context windows.
+\end{itemize}
+
+\paragraph{Extensibility}
+
+New strategies can be implemented by subclassing \texttt{BaseChunkSelectionStrategy} and implementing the \texttt{select()} method. Strategies can implement arbitrary logic: clustering, embedding-based similarity, adversarial selection, etc.
+
+\subsection{Query Generation}
+
+\subsubsection{Single-Turn Query Synthesis}
+
+For independent query generation, the generator constructs a system prompt template:
+
+\begin{equation}
+p_{system} = \text{template}(\text{context}, \text{seed\_examples}, n_{queries})
+\end{equation}
+
+Where:
+\begin{itemize}
+    \item \textbf{context}: The full chunk content
+    \item \textbf{seed\_examples}: Optional example queries for style guidance
+    \item \textbf{$n_{queries}$}: Number of queries to generate
+\end{itemize}
+
+The LLM is instructed to generate $n_{queries}$ diverse questions at varying cognitive levels (recall, comprehension, application, analysis). Output is structured:
+
+\begin{equation}
+\text{GeneratedQueriesOutput} = \{
+    \text{queries}: [\text{query}_1, \ldots, \text{query}_{n_{queries}}],
+    \text{chunk\_summary}: \text{str}
+\}
+\end{equation}
+
+Each query includes optional metadata:
+
+\begin{equation}
+\text{GeneratedQuery} = \{
+    \text{query}: \text{str},
+    \text{difficulty}: \{\text{easy}, \text{medium}, \text{hard}\},
+    \text{query\_type}: \{\text{factual}, \text{inferential}, \text{comparative}, \text{analytical}\}
+\}
+\end{equation}
+
+\subsubsection{Multi-Turn Conversation Synthesis}
+
+For coherent conversation generation, the generator uses a conversation-specific prompt:
+
+\begin{equation}
+p_{system}^{conv} = \text{template\_conversation}(\text{context}, \text{seed\_examples}, n_{turns})
+\end{equation}
+
+The LLM is instructed to generate a natural, escalating conversation where:
+\begin{itemize}
+    \item Turn $t=1$ establishes a broad question about the main topic.
+    \item Turn $t > 1$ naturally follows, potentially referencing or clarifying previous answers.
+    \item Cognitive level progresses: simple recall $\rightarrow$ comprehension $\rightarrow$ analysis.
+\end{itemize}
+
+Output is structured:
+
+\begin{equation}
+\text{GeneratedConversationOutput} = \{
+    \text{turns}: [\text{turn}_1, \ldots, \text{turn}_{n_{turns}}],
+    \text{conversation\_summary}: \text{str},
+    \text{chunk\_summary}: \text{str}
+\}
+\end{equation}
+
+Each turn includes:
+
+\begin{equation}
+\text{ConversationTurn} = \{
+    \text{query}: \text{str},
+    \text{turn\_number}: \mathbb{Z}_{>0},
+    \text{difficulty}: \{\text{easy}, \text{medium}, \text{hard}\},
+    \text{query\_type}: \{\text{factual}, \text{inferential}, \text{follow\text{-}up}, \ldots\},
+    \text{expected\_context}: \text{str} | \text{None}
+\}
+\end{equation}
+
+\subsection{LangChain Integration}
+
+The generator uses LangChain's \texttt{BaseChatModel} interface, supporting any LangChain-compatible model (OpenAI, Anthropic, Groq, open-source via Ollama, etc.):
+
+\begin{itemize}
+    \item \textbf{Structured Output}: When the model supports \texttt{with\_structured\_output()}, responses are automatically parsed into Pydantic models.
+
+    \item \textbf{Fallback Parsing}: For models without structured output support, responses are parsed from JSON blocks or raw JSON in the response.
+
+    \item \textbf{Flexibility}: Custom system prompts can override defaults, enabling domain-specific generation behaviors.
+\end{itemize}
+
+\section{The ``Roast Me'' Evaluation Paradigm}
+
+\subsection{Motivation}
+
+Traditional evaluation datasets test how well an AI system answers typical questions. However, resilient, production-ready systems must handle adversarial, contradictory, and edge-case scenarios:
+
+\begin{itemize}
+    \item \textbf{Consistency Under Pressure}: How does the agent handle contradictory follow-ups?
+    \item \textbf{Scope Awareness}: Can the agent gracefully handle out-of-scope queries?
+    \item \textbf{Ambiguity Tolerance}: How does it respond to ambiguous or conflicting instructions?
+    \item \textbf{Contradiction Detection}: Can it identify and flag inconsistencies in provided documentation?
+\end{itemize}
+
+\subsection{Implementation}
+
+The Generators module enables ``roast me'' evaluation through customizable generation:
+
+\begin{enumerate}
+    \item \textbf{Custom System Prompts}: Override the default generation prompt with an adversarial variant:
+
+    \begin{quote}
+    ``Generate uncomfortable, challenging, or edge-case questions that probe weaknesses in the provided documentation. Seek contradictions, ambiguities, conflicting requirements, and scenarios that would challenge the AI agent.''
+    \end{quote}
+
+    \item \textbf{Selection Strategies}: Use custom strategies to target specific chunks:
+    \begin{itemize}
+        \item \textbf{Contradiction Detection}: Select pairs of chunks with potentially conflicting information.
+        \item \textbf{Boundary Testing}: Emphasize chunks at the edges of documented behavior.
+        \item \textbf{Ambiguity Extraction}: Select vague or underspecified sections.
+    \end{itemize}
+
+    \item \textbf{Multi-Turn Pressure}: Generate multi-turn conversations that escalate challenges across turns, e.g.:
+
+    \begin{quote}
+    Turn 1: ``Can you explain feature X?''
+
+    Turn 2: ``But the documentation also says Y. How do X and Y work together?''
+
+    Turn 3: ``Isn't that a contradiction?''
+
+    Turn 4: ``How should a user handle this situation?''
+    \end{quote}
+\end{enumerate}
+
+\subsection{Evaluation Metrics}
+
+When ``roast me'' datasets are processed through Gaussia metrics:
+
+\begin{itemize}
+    \item \textbf{Toxicity Metric}: Measures whether adversarial pressure triggers hostile or inappropriate responses.
+    \item \textbf{Consistency Metric}: Tracks whether answers across turns remain logically consistent.
+    \item \textbf{Bias Metric}: Identifies whether edge cases reveal unfair treatment of certain scenarios.
+    \item \textbf{Conversational Quality}: Assesses whether the agent maintains coherence under adversarial pressure.
+\end{itemize}
+
+\section{System Implementation}
+
+\begin{enumerate}
+    \item \textbf{Load}: read markdown files and produces chunks.
+
+    \item \textbf{Select}: group chunks, yielding one or more chunk groups.
+
+    \item \textbf{Generate}: For each chunk group:
+
+    \begin{itemize}
+        \item Iterate over chunks in the group.
+        \item Generate queries or conversation.
+        \item Collect generated queries/turns into Batch objects.
+        \item Build a Dataset with all batches.
+    \end{itemize}
+
+    \item \textbf{Output}: Return list of Dataset objects compatible with Gaussia metrics.
+\end{enumerate}
+
+\section{Practical Deployment Scenarios}
+
+\subsection{Baseline Sequential Generation}
+
+The simplest deployment scenario uses sequential processing: a markdown context document is loaded, chunked through hybrid header and size-based segmentation, and all resulting chunks are processed as a single group. The generator synthesizes independent queries from each chunk, producing a comprehensive evaluation dataset covering the entire knowledge base. This approach is appropriate when evaluation must reflect all documented content and computational resources permit processing the full context.
+
+\subsection{Stratified Sampling for Controlled Diversity}
+
+A more sophisticated deployment employs random sampling strategies to create multiple evaluation datasets from different chunk combinations. Rather than a single comprehensive dataset, the system generates $k$ independent datasets, each constructed from a random sample of $n$ chunks from the full collection. This approach trades exhaustive coverage for controlled computational cost and diverse evaluation scenarios. Each sample introduces variability in which context chunks appear together, testing the assistant's ability to maintain consistency across partial knowledge states.
+
+\subsection{Dialogue-Centric Evaluation}
+
+For conversational AI systems, a specialized deployment mode generates coherent multi-turn conversations rather than independent queries. The generator produces ordered conversation sequences where each turn logically follows from previous exchanges. This is particularly valuable for testing conversational continuity, context preservation across turns, and the assistant's ability to refine or extend previous answers. The coherence constraints ensure that generated conversations reflect realistic dialogue patterns.
+
+\subsection{Adversarial Stress Testing}
+
+The ``roast me'' paradigm represents an adversarial deployment scenario where custom generation prompts guide the LLM toward deliberately challenging, contradictory, or edge-case query generation. Rather than asking generic questions about documented content, the system is directed to expose weaknesses: contradictions within documentation, ambiguous specifications, conflicting requirements, or scenarios outside stated scope. This mode systematically probes the limits and weak points of both the documentation and the assistant's handling thereof.
+
+\section{Extensibility and Future Work}
+
+\subsection{Custom Selection Strategies}
+
+The open/closed architecture enables new strategies without modifying existing code. New selection strategies can be implemented as subclasses of the \texttt{BaseChunkSelectionStrategy} interface. For example, an \textit{embedding-based clustering strategy} would:
+
+\begin{enumerate}
+    \item Compute dense vector embeddings for all chunks using a learned embedding model.
+    \item Apply clustering algorithms (k-means, hierarchical clustering, etc.) to group semantically similar chunks.
+    \item Yield each cluster as a separate chunk group, ensuring chunks processed together are semantically coherent.
+\end{enumerate}
+
+This approach ensures that evaluation datasets contain contextually related content, which is particularly valuable for domains where chunk proximity in semantic space predicts downstream task performance. The strategy interface is generic enough to support arbitrary grouping logic: graph-based clustering, hierarchical decomposition, or domain-specific heuristics.
+
+\subsection{Planned Enhancements}
+
+Based on research best practices, future extensions include:
+
+\begin{enumerate}
+    \item \textbf{Decomposition Strategy}: Break complex concepts into simpler sub-questions.
+
+    \item \textbf{Multi-Hop Strategy}: Generate questions requiring reasoning across multiple chunks.
+
+    \item \textbf{Reasoning-Based Strategy}: Create questions that test implicit reasoning and inference.
+
+    \item \textbf{Contradiction Detection}: Automatically identify and highlight conflicting chunks, then generate targeted adversarial queries.
+
+    \item \textbf{Semantic Chunking}: Use embeddings for structure-aware semantic segmentation.
+
+    \item \textbf{Custom Loaders}: Support PDF, HTML, web URLs, and domain-specific formats.
+
+    \item \textbf{Batch Processing}: Async batch generation for large-scale dataset creation.
+
+    \item \textbf{Multi-Language Support}: Generate diverse queries across multiple natural languages.
+\end{enumerate}
+
+\subsection{Cross-SDK Future Plans}
+
+The Python implementation serves as the reference. Future ports may include:
+
+\begin{itemize}
+    \item \textbf{TypeScript/Node.js}: For JavaScript-based evaluation pipelines.
+    \item \textbf{Rust}: For compiled, production-grade synthesis engines.
+\end{itemize}
+
+\section{Conclusion}
+
+The Gaussia Generators module addresses the critical challenge of scalable synthetic dataset generation for AI evaluation. By combining intelligent document chunking, pluggable selection strategies, and LLM-driven synthesis, we enable organizations to create diverse, grounded evaluation datasets from existing knowledge bases at scale.
+
+Our contributions include:
+
+\begin{itemize}
+    \item A modular, extensible architecture supporting multiple generation modes and selection strategies.
+    \item A practical hybrid chunking algorithm that balances structural awareness with implementation simplicity.
+    \item The ``roast me'' paradigm for systematic adversarial evaluation.
+    \item An open-source implementation fully integrated with the Gaussia evaluation framework.
+\end{itemize}
+
+The module has been successfully deployed in production evaluation pipelines and has enabled teams to scale from manual dataset curation to automated, context-grounded generation. We invite the community to extend the framework with custom selection strategies, context loaders, and generation modes tailored to domain-specific evaluation needs.
+
+\subsection{Broader Impact}
+
+Scalable dataset generation democratizes AI evaluation, making comprehensive testing accessible to teams without extensive resources for manual annotation. This can improve overall AI system quality and safety. However, practitioners should be aware that synthetically generated datasets, while useful, should be complemented with human-reviewed and domain-expert-curated evaluation sets for critical applications.
+
+\bibliographystyle{abbrvnat}
+\bibliography{references}
+
+\end{document}
