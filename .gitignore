@@ -1,0 +1,26 @@
+researches/
+
+**# LATEX
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cbl
+*.cb2
+*.lb
+*.glo
+*.idx
+*.gls
+*.ist
+*.bbl
+*.bcf
+*.blg
+
+*.env
+
+generate_benchmark.py
