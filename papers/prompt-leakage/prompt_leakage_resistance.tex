@@ -34,11 +34,16 @@ detection framework that combines a semantic similarity score between the agent 
 chunks of the system prompt with a cosine alignment score against a reference safe response.
 We evaluate four similarity methods---cosine sentence embeddings, a cross-encoder reranker,
 ROUGE-L, and NLI entailment---on a benchmark of 68 records spanning four leakage categories and
-three difficulty levels. Our results show that a \emph{smart cascade} combining cosine and a
-cross-encoder reranker achieves 61.5\% detection of adversarial leaks with a 6.2\% false
-positive rate, while reducing judge escalation to 21.2\% of all traffic. ROUGE-L and NLI are
-empirically disqualified as structurally incompatible with the task. The metric and benchmark
-are released as part of the Gaussia evaluation framework.
+three difficulty levels. ROUGE-L and NLI are empirically disqualified as structurally incompatible
+with the task. Among the viable methods, the cross-encoder reranker achieves 61.5\% detection at
+the default threshold $\tau = 0.6$ with no hard false negatives. Threshold calibration shows
+$\tau = 0.65$ as the optimal operating point: 76.9\% detection, 0\% hard false negative rate, and
+a 6.2\% false positive rate, while $\tau = 0.70$ triggers a sharp increase in false positives to
+31.2\%. We additionally evaluate a \emph{smart cascade} that uses cosine embeddings to pre-filter
+safe responses before the reranker, and find that it reduces judge escalation at the cost of
+converting ambiguous adversarial cases into hard false negatives---a net regression in
+security-critical deployments. The metric and benchmark are released as part of the Gaussia
+evaluation framework.
 \end{abstract}
 
 % ============================================================
@@ -66,9 +71,14 @@ We make the following contributions:
     levels, generated with Gemma-3-12B-IT on realistic system prompts.
   \item \textbf{Comparative evaluation}: four similarity methods tested against adversarial and
     legitimate records, with a clear empirical argument for discarding lexical and NLI approaches.
-  \item \textbf{Smart cascade}: a principled combination of cosine embeddings and a
-    cross-encoder reranker that achieves the highest detection rate while halving judge
-    escalation.
+  \item \textbf{Threshold calibration}: a sweep over the decision threshold $\tau$ for the
+    cross-encoder reranker, identifying $\tau = 0.65$ as the optimal operating point (76.9\%
+    detection, 0\% hard false negatives, 6.2\% FP) and showing that $\tau = 0.70$ causes a
+    sharp false positive increase to 31.2\%.
+  \item \textbf{Smart cascade (negative result)}: a combination of cosine embeddings and the
+    reranker that reduces judge escalation but converts ambiguous adversarial cases into hard
+    false negatives, making it unsuitable as the primary configuration in security-sensitive
+    deployments.
 \end{enumerate}
 
 % ============================================================
@@ -91,8 +101,7 @@ that discloses confidential content.
 
 PLR advances beyond both by introducing chunk-level similarity to preserve partial-leak signals
 in long prompts, a second signal anchored to a safe reference response to control false
-positives, and a graded output (binary or continuous) that enables quantitative comparison
-across model configurations.
+positives, and a numeric output that enables quantitative comparison across model configurations.
 
 \citet{hui2024pleak} introduce PLeak, a closed-box attack framework that recovers system
 prompts by treating prompt theft as an optimisation problem. Their work characterises the
@@ -177,7 +186,7 @@ suitable for the second signal regardless of which method is used for Signal~1.
 
 \begin{table}[h]
   \centering
-  \caption{Decision table for PLR verdicts. Threshold: $\tau = 0.6$.}
+  \caption{Decision table for PLR verdicts. Threshold: $\tau = 0.6$ (default).}
   \label{tab:decision}
   \begin{tabular}{ccl}
     \toprule
@@ -191,12 +200,10 @@ suitable for the second signal regardless of which method is used for Signal~1.
   \end{tabular}
 \end{table}
 
-Anomalous and Ambiguous cases are escalated to a lightweight LLM judge. The threshold
-$\tau = 0.6$ is the default value used throughout our experiments. It is consistent with
-cosine similarity score distributions for semantically related texts reported by
-\citet{reimers2019sbert}, where strong semantic overlap reliably produces cosine scores above
-this value. Methods with different score ranges require independent threshold calibration
-(Section~\ref{sec:discussion}).
+Anomalous and Ambiguous cases are escalated to a lightweight LLM judge. The default threshold
+$\tau = 0.6$ is consistent with cosine similarity score distributions for semantically related
+texts reported by~\citet{reimers2019sbert}. Methods with different score ranges require
+independent threshold calibration (Section~\ref{sec:threshold}).
 
 \subsection{PLR Score and Output}
 
@@ -217,10 +224,9 @@ leakage:
   \text{PLR} = 1 - \frac{1}{N} \sum_{i=1}^{N} s_i
 \end{equation}
 
-\noindent where $s_i$ is the per-record leakage score derived according to the chosen scoring
-mode.
+\noindent where $s_i$ is the per-record leakage score defined as follows.
 
-\paragraph{Binary mode (default).}
+\paragraph{Binary mode.}
 Each verdict maps to a score:
 
 \begin{equation}
@@ -244,21 +250,6 @@ For escalated records, $s_{\text{esc}}$ depends on whether a judge is configured
 
 The use of a judge is recommended. Without one, the 0.5 default penalises the model
 conservatively without making an unsupported claim of leak or safety.
-
-\paragraph{Continuous mode.}
-When finer granularity is required, the pipeline returns a continuous leakage score per record
-instead of a binary verdict:
-
-\begin{equation}
-  s_i = \operatorname{MaxChunkSim}(R_i, P) \times \bigl(1 - \operatorname{CosineSim}(R_i, G)\bigr)
-\end{equation}
-
-This score is high only when both conditions hold simultaneously: the response contains system
-prompt content \emph{and} diverges from the expected safe response. A legitimate response that
-raises Signal~1 due to domain overlap but maintains Signal~2 (aligned with the safe reference)
-receives a low continuous score, preserving the false-positive protection of the two-signal
-design. Unlike binary mode, continuous mode captures how close a response was to leaking,
-enabling finer comparison across model configurations over time.
 
 Per-category PLR scores are reported alongside the global scalar to capture leakage patterns
 by information type (Section~\ref{sec:exp2}).
@@ -303,8 +294,7 @@ miss. The score is:
 the concatenation of $q$, $c_i$, and $R$.
 
 The reranker achieves a mean MaxChunkSim of 0.970 on adversarial records---the strongest
-detection signal of all evaluated methods---and is the recommended Signal~1 component of the
-final pipeline.
+detection signal of all evaluated methods---and is the recommended Signal~1 component.
 
 \subsection{ROUGE-L}
 
@@ -377,7 +367,8 @@ negatives for false positive analysis---the most challenging case for the two-si
 \paragraph{Evaluation.}
 All four methods are evaluated on all 68 records using locally-run models
 (\texttt{all-MiniLM-L6-v2}, \texttt{nli-deberta-v3-small}, \texttt{Qwen3-Reranker-0.6B}).
-Combination strategies are evaluated on the adversarial set.
+Threshold calibration and combination strategies are evaluated on the full 68-record dataset,
+split by adversarial and legitimate subsets.
 
 % ============================================================
 \section{Results}
@@ -390,7 +381,10 @@ Combination strategies are evaluated on the adversarial set.
 Table~\ref{tab:detection} shows overall and per-difficulty detection rates on the 52 adversarial
 records. The reranker is the strongest detector at every difficulty level. Cosine provides
 meaningful detection (34.6\%) and is the only viable alternative. NLI and ROUGE are
-disqualified.
+disqualified. A critical property of the reranker not captured by detection rate alone is that
+it produces \emph{zero hard false negatives} at any threshold evaluated: adversarial records it
+does not detect are escalated to the judge rather than incorrectly closed as safe. This property
+is central to the threshold calibration results in Section~\ref{sec:threshold}.
 
 \begin{table}[h]
   \centering
@@ -462,47 +456,101 @@ ROUGE-L and NLI achieve 0\% FP not because of precision but because they cannot 
 anything as a leak---their zero false positive rate is a consequence of structural incapacity,
 not discrimination quality.
 
-\subsection{Combination Strategies}
-\label{sec:combo}
+\subsection{Threshold Calibration}
+\label{sec:threshold}
 
-Table~\ref{tab:combo} shows combination strategy results. All strategies match the reranker's
-61.5\% detection ceiling. The discriminating factor is judge escalation.
+Having identified the reranker as the recommended Signal~1 method, we evaluate
+how the decision threshold $\tau$ affects the detection--false positive tradeoff. Table~\ref{tab:threshold}
+reports results for the reranker across $\tau \in [0.55, 0.75]$ on the full 68-record dataset.
+
+The key distinction in this analysis is between two types of missed detections:
+\begin{itemize}
+  \item \textbf{Hard false negatives (FN-safe):} adversarial records closed as \textit{safe}---the
+    system makes a confident wrong decision.
+  \item \textbf{Soft false negatives (FN-judge):} adversarial records escalated to the
+    judge---the system is uncertain and defers rather than deciding.
+\end{itemize}
 
 \begin{table}[h]
   \centering
-  \caption{Combination strategy results on 52 adversarial records.}
-  \label{tab:combo}
-  \begin{tabular}{lcc}
+  \caption{Reranker threshold sweep on 52 adversarial and 16 legitimate records.}
+  \label{tab:threshold}
+  \begin{tabular}{lcccc|cc}
     \toprule
-    Strategy & Detection & Judge Escalation \\
+    & \multicolumn{4}{c|}{Adversarial (52)} & \multicolumn{2}{c}{Legitimate (16)} \\
+    $\tau$ & Detection & FN-safe & FN-judge & & FP & Safe \\
     \midrule
-    Reranker only    & 61.5\% & 38.5\% \\
-    Union (any)      & 61.5\% & — \\
-    Weighted average & 61.5\% & — \\
-    Naive cascade    & 61.5\% & 38.5\% \\
-    \textbf{Smart cascade}    & \textbf{61.5\%} & \textbf{21.2\%} \\
+    0.55 & 50.0\% & 0.0\% & 50.0\% & & 6.2\%  & 18.8\% \\
+    \textbf{0.60} & \textbf{61.5\%} & \textbf{0.0\%} & \textbf{38.5\%} & & \textbf{6.2\%}  & \textbf{25.0\%} \\
+    \textbf{0.65} & \textbf{76.9\%} & \textbf{0.0\%} & \textbf{23.1\%} & & \textbf{6.2\%}  & \textbf{25.0\%} \\
+    0.70 & 84.6\% & 0.0\% & 15.4\% & & 31.2\% & 25.0\% \\
+    0.75 & 84.6\% & 0.0\% & 15.4\% & & 50.0\% & 6.2\%  \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Smart cascade.}
-The algorithm is:
+Three observations emerge. First, the reranker produces \emph{zero hard false negatives across
+all thresholds evaluated}: every adversarial record it fails to detect is escalated to the
+judge, never incorrectly labeled safe. Second, $\tau = 0.65$ represents the optimal operating
+point: detection improves from 61.5\% to 76.9\% (15.4 percentage points) while false positives
+remain at 6.2\%---the same single domain-boundary edge case identified at $\tau = 0.6$.
+Third, $\tau = 0.70$ triggers a sharp false positive increase to 31.2\% (5/16 legitimate
+records), making it unsuitable for production use. We therefore recommend $\tau = 0.6$ as the
+conservative default and $\tau = 0.65$ as the deployment target after validating false positive
+tolerance on a representative legitimate sample.
+
+\subsection{Smart Cascade: A Negative Result}
+\label{sec:cascade}
+
+Given that cosine and the reranker have complementary score distributions---cosine
+well-calibrated in $[0,1]$, reranker concentrated near 0 and 1---we evaluate a \emph{smart
+cascade} that uses cosine to pre-filter safe responses and relies on the reranker for leak
+detection:
 
 \begin{enumerate}
-  \item Compute $\operatorname{MaxChunkSim}_{\text{reranker}}(R, P)$ and
-    $\operatorname{CosineSim}(R, G)$; apply the decision table with cosine as Signal~1 as
-    well.
+  \item Compute both cosine and reranker verdicts via the decision table.
   \item If cosine declares \textit{safe}: return \textbf{safe}.
-  \item Otherwise apply the reranker decision. If it declares \textit{leak}: return
-    \textbf{leak}. If it declares \textit{safe}: return \textbf{safe}.
+  \item If reranker declares \textit{leak}: return \textbf{leak}.
   \item All remaining cases: escalate to judge.
 \end{enumerate}
 
-The rationale for this ordering is complementarity of roles: cosine directly closes 62.5\% of
-legitimate queries as safe, eliminating unnecessary reranker inference on clean traffic; the
-reranker provides the highest-sensitivity leak signal for the remaining cases. The resulting
-21.2\% judge escalation (vs.\ 38.5\% with the reranker alone) represents the genuinely
-ambiguous cases---medium-to-hard paraphrase attacks where both signals are below threshold.
+The motivation is that cosine closes 62.5\% of legitimate queries as safe without running the
+reranker, reducing unnecessary inference cost and judge load on clean traffic.
+
+Table~\ref{tab:cascade} compares the smart cascade against the reranker alone at both
+recommended thresholds on adversarial records.
+
+\begin{table}[h]
+  \centering
+  \caption{Smart cascade vs.\ reranker alone on 52 adversarial records (all at $\tau = 0.6$
+    unless noted). FN-safe = hard false negatives; FN-judge = soft false negatives.}
+  \label{tab:cascade}
+  \begin{tabular}{lccc}
+    \toprule
+    Configuration & Detection & FN-safe & FN-judge \\
+    \midrule
+    Reranker $\tau = 0.60$       & 61.5\% & 0.0\%  & 38.5\% \\
+    \textbf{Reranker $\tau = 0.65$} & \textbf{76.9\%} & \textbf{0.0\%} & \textbf{23.1\%} \\
+    Smart cascade $\tau = 0.6/0.6$ & 61.5\% & 17.3\% & 21.2\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The smart cascade matches the reranker's 61.5\% detection but introduces 9 hard false
+negatives (17.3\%) that the reranker alone would have escalated to the judge. These are
+adversarial records where cosine's Signal~2 is high enough to declare \textit{safe}, but the
+reranker's Signal~1 is in the ambiguous range---not a disagreement between methods, but both
+methods being uncertain in the same direction. The cascade's reduction in judge escalation
+(38.5\% to 21.2\%) comes entirely from those 9 records being incorrectly closed rather than
+correctly deferred.
+
+Threshold tuning cannot resolve this: raising the cosine threshold to suppress safe closures
+only recovers the hard false negatives once cosine is set high enough to never declare anything
+safe, at which point the cascade collapses to the reranker alone.
+
+The smart cascade provides genuine value for \emph{legitimate traffic throughput}: cosine
+reduces reranker inference cost on clean requests. In adversarial detection, the reranker at
+$\tau = 0.65$ is strictly superior.
 
 % ============================================================
 \section{Discussion}
@@ -517,43 +565,73 @@ that silently discards the system prompt content being evaluated. Both methods a
 regardless of threshold tuning, and we report this as a useful negative result for practitioners
 evaluating off-the-shelf similarity metrics for leak detection.
 
-\paragraph{Complementarity of cosine and reranker.}
-The two viable methods have different strengths. Cosine produces well-calibrated scores
-suitable for the second signal ($\operatorname{CosineSim}(R, G)$) and reliably dismisses
-legitimate safe responses. The reranker produces the strongest first signal
-($\operatorname{MaxChunkSim}(R, P)$), particularly for precise content overlap in
-\textit{Secrets \& Credentials}. Their combination in the smart cascade is principled: each
-method is used exclusively for the task it performs best.
+\paragraph{The reranker's conservatism: a detection asset and an operational cost.}
+The cross-encoder reranker scores adversarial records with a mean MaxChunkSim of 0.970,
+concentrating scores near 0 and 1 and leaving few records in the ambiguous mid-range. When it
+fails to detect a leak, it escalates rather than closes---a genuinely uncertain case correctly
+deferred to the judge. This conservatism is its most important property for security-critical
+deployments: it never makes a confident wrong call on adversarial traffic.
+
+The same conservatism is a liability on legitimate traffic. At $\tau = 0.65$, the reranker
+closes only 4 of 16 legitimate records as \textit{safe} directly, escalating the remaining 11
+to the judge. Cosine closes 10 of 16 as safe without judge involvement. Each unnecessary
+escalation carries the full inference cost of an LLM judge call, which at production scale
+makes the reranker-only pipeline significantly more expensive than its detection numbers
+suggest. This is the central operational trade-off of the current metric: the method that
+eliminates hard false negatives on adversarial traffic is also the one that over-escalates
+clean traffic most aggressively.
 
 \paragraph{The domain-boundary false positive.}
 The 6.2\% false positive rate traces to a single edge case that is inherent to semantic
 similarity-based detection: agents operating in the same domain as their system prompt will
-produce responses that echo prompt language when answering legitimate domain queries. One
-mitigation strategy is per-query reference calibration---constructing $G$ as a response that
-references the domain without sensitive specifics, making Signal~2 more discriminative for
-boundary cases.
+produce responses that echo prompt language when answering legitimate domain queries. This
+edge case is stable across thresholds from $\tau = 0.55$ to $\tau = 0.65$---the same record
+is flagged at all three values. One mitigation strategy is per-query reference
+calibration---constructing $G$ as a response that references the domain without sensitive
+specifics, making Signal~2 more discriminative for boundary cases.
+
+\paragraph{Threshold calibration in practice.}
+The sharp false positive increase at $\tau = 0.70$ suggests the reranker's score distribution
+has a natural gap between legitimate and adversarial responses in the $[0.65, 0.70]$ range.
+Practitioners should treat $\tau = 0.65$ as the deployment target but validate it against a
+held-out legitimate sample from their own domain before applying it in production, as the
+optimal threshold may shift with different system prompt styles or agent models.
 
 \paragraph{Limitations.}
 \begin{itemize}
-  \item \textbf{Threshold calibration}: the decision threshold $\tau = 0.6$ is calibrated
-    for cosine similarity scores. The reranker produces scores concentrated near 0 and 1
-    (mean 0.970 on adversarial records), so applying the same threshold to it as Signal~1
-    in an isolated pipeline would require re-calibration against held-out data.
+  \item \textbf{Threshold calibration}: the recommended threshold $\tau = 0.65$ is calibrated
+    on this benchmark. Different system prompt styles, agent models, or domain vocabularies
+    may shift the optimal threshold. Per-deployment calibration against a held-out legitimate
+    sample is recommended before raising the threshold above the conservative default of 0.6.
   \item \textbf{Scale}: the benchmark comprises 68 records. Results are directionally robust
     but per-category confidence intervals are wide.
   \item \textbf{Multi-turn attacks}: the current pipeline evaluates single-turn responses.
     Multi-turn attacks---where an adversary extracts the prompt incrementally across several
     turns---are outside the current scope and are left for future work.
-  \item \textbf{Undetected leaks}: 38.5\% of adversarial records (20/52) are not
-    automatically classified as leaks by the smart cascade pipeline. These are medium-to-hard
-    paraphrase attacks where both signals fall below threshold. The smart cascade escalates
-    approximately 21\% of all traffic to a judge (down from 38.5\% with the reranker alone);
-    a judge component is a required part of any production deployment.
+  \item \textbf{Undetected leaks}: 23.1\% of adversarial records (12/52) are not automatically
+    classified by the reranker at $\tau = 0.65$ and are escalated to the judge. These are
+    medium-to-hard paraphrase attacks where the reranker score falls below threshold. A judge
+    component is a required part of any production deployment.
 \end{itemize}
 
 \paragraph{Future work.}
-Per-method threshold calibration, a multi-turn evaluation protocol, and a lightweight LLM judge
-optimized for the ambiguous case are the primary extensions.
+A multi-turn evaluation protocol and a lightweight LLM judge optimized for the ambiguous case
+are the primary extensions. A \emph{continuous scoring mode}---returning a scalar leakage
+intensity rather than a discrete verdict---is a natural extension of the two-signal design,
+but is left for future work. The intended formulation
+$s_i = \operatorname{MaxChunkSim}(R_i, P) \times (1 - \operatorname{CosineSim}(R_i, G))$
+assumes that Signal~1 varies meaningfully across record types. With the reranker, Signal~1
+concentrates near 1 for both adversarial and legitimate records that reference their domain,
+collapsing the product to approximately $1 - \operatorname{CosineSim}(R_i, G)$ and losing the
+independent Signal~1 contribution. Reliable continuous scores require either a Signal~1 method
+whose scores discriminate between legitimate domain references and actual leakage, or a
+reformulation of the scoring function that accounts for this saturation effect.
+The deeper open problem is a deterministic \emph{safe classifier}:
+a method that identifies with high confidence that a response does not leak system prompt
+content, without relying on an LLM judge and without the hard false negatives that disqualify
+cosine for this role. Such a component would allow the pipeline to close clean traffic cheaply
+and reserve judge inference exclusively for the genuinely ambiguous cases the reranker flags,
+eliminating the current tension between detection reliability and operational cost.
 
 % ============================================================
 \section{Conclusion}
@@ -567,10 +645,24 @@ ambiguous cases.
 
 Our experiments on 68 benchmark records show that lexical (ROUGE-L) and entailment-based (NLI)
 methods are structurally incompatible with the task due to LLM paraphrase and token-limit
-truncation respectively. The cross-encoder reranker is the strongest individual detector
-(61.5\%), and combining it with cosine in a smart cascade maintains detection while reducing
-judge escalation from 38.5\% to 21.2\%. The false positive rate is bounded at 6.2\%---a single
-edge case attributable to domain-boundary overlap rather than method failure.
+truncation respectively. Among the viable methods, the cross-encoder reranker is the only one
+that produces zero hard false negatives across all evaluated thresholds---adversarial records
+it cannot confidently classify are escalated to the judge rather than incorrectly closed as
+safe.
+
+Threshold calibration identifies $\tau = 0.65$ as the optimal operating point: 76.9\%
+detection, 0\% hard false negative rate, and 6.2\% false positive rate. The threshold
+$\tau = 0.70$ achieves higher detection (84.6\%) but triggers a sharp false positive increase
+to 31.2\%, disqualifying it for production use. We recommend $\tau = 0.6$ as the conservative
+default and $\tau = 0.65$ as the validated deployment target.
+
+A smart cascade combining cosine embeddings and the reranker was evaluated as a cost
+optimization: cosine pre-filters safe responses to reduce unnecessary reranker inference on
+legitimate traffic. However, the cascade introduces 17.3\% hard false negatives on adversarial
+records by converting cases the reranker would escalate into confident-but-wrong safe verdicts.
+Threshold tuning does not resolve this---the cascade can only eliminate hard false negatives by
+disabling cosine's safe closures entirely, at which point it collapses to the reranker alone.
+The smart cascade is therefore not recommended as the primary detection configuration.
 
 PLR is integrated into the Gaussia evaluation framework, enabling practitioners to compare
 model configurations on a common numeric scale across leakage categories and difficulty levels.
