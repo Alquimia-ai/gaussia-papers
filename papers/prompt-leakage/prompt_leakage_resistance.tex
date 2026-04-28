@@ -1,0 +1,581 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}
+
+\title{Measuring Prompt Leakage Resistance in Deployed LLM Agents}
+\author{
+  Gaussia Team \\
+  \texttt{research@gaussia.ai}
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large language models deployed with system prompts containing sensitive information are vulnerable
+to adversarial extraction attacks. No standard, reproducible metric exists to quantify how well a
+model resists such attacks. We propose \textbf{Prompt Leakage Resistance (PLR)}, a two-signal
+detection framework that combines a semantic similarity score between the agent response and
+chunks of the system prompt with a cosine alignment score against a reference safe response.
+We evaluate four similarity methods---cosine sentence embeddings, a cross-encoder reranker,
+ROUGE-L, and NLI entailment---on a benchmark of 68 records spanning four leakage categories and
+three difficulty levels. Our results show that a \emph{smart cascade} combining cosine and a
+cross-encoder reranker achieves 61.5\% detection of adversarial leaks with a 6.2\% false
+positive rate, while reducing judge escalation to 21.2\% of all traffic. ROUGE-L and NLI are
+empirically disqualified as structurally incompatible with the task. The metric and benchmark
+are released as part of the Gaussia evaluation framework.
+\end{abstract}
+
+% ============================================================
+\section{Introduction}
+% ============================================================
+
+The proliferation of LLM-powered agents in production has made system prompt security a
+first-order concern. Operators configure agents via system prompts that frequently contain
+sensitive material: proprietary business logic, internal credentials, access control rules, and
+behavioral constraints. Adversarial users can exploit prompt injection techniques~\citep{perez2022ignore}
+to extract this information, exposing intellectual property or enabling privilege escalation.
+
+Existing evaluation frameworks treat prompt leakage as a binary observable: either the agent
+refused to reveal the prompt or it did not. This framing ignores the spectrum of partial
+leakage, paraphrase-mediated disclosure, and the high false-positive risk of flagging legitimate
+responses that necessarily reference system prompt content. No metric allows practitioners to
+compare model configurations, system prompt formulations, or agent architectures on a common
+scale.
+
+We make the following contributions:
+\begin{enumerate}
+  \item \textbf{PLR metric}: a numeric score derived from a two-signal, chunk-based detection
+    pipeline with a four-way decision table.
+  \item \textbf{Benchmark}: 68 records across four leakage categories and three difficulty
+    levels, generated with Gemma-3-12B-IT on realistic system prompts.
+  \item \textbf{Comparative evaluation}: four similarity methods tested against adversarial and
+    legitimate records, with a clear empirical argument for discarding lexical and NLI approaches.
+  \item \textbf{Smart cascade}: a principled combination of cosine embeddings and a
+    cross-encoder reranker that achieves the highest detection rate while halving judge
+    escalation.
+\end{enumerate}
+
+% ============================================================
+\section{Related Work}
+% ============================================================
+
+\paragraph{LLM safety evaluation.}
+Prompt injection and jailbreak attacks have received growing attention~\citep{perez2022ignore}.
+Most defenses focus on input filtering rather than post-hoc response evaluation.
+
+\paragraph{Leakage metrics.}
+Existing approaches to measuring prompt leakage fall into two broad categories. The first
+relies on an LLM judge that issues a binary verdict --- leaked or not --- for each response.
+While simple to deploy, this approach produces no numeric score for model comparison, provides
+no analysis of false positives, and offers no insight into partial or paraphrase-mediated
+leakage. The second computes direct text similarity between the response and the full system
+prompt as a single vector. This approach conflates legitimate domain overlap with actual leakage
+and has no mechanism to distinguish a model that answers safely about its own domain from one
+that discloses confidential content.
+
+PLR advances beyond both by introducing chunk-level similarity to preserve partial-leak signals
+in long prompts, a second signal anchored to a safe reference response to control false
+positives, and a graded output (binary or continuous) that enables quantitative comparison
+across model configurations.
+
+\citet{hui2024pleak} introduce PLeak, a closed-box attack framework that recovers system
+prompts by treating prompt theft as an optimisation problem. Their work characterises the
+attack surface from the adversary's perspective. PLR is complementary: it provides a
+per-response detection pipeline for operators to evaluate their own agent's resistance on
+their own dataset, independently of any specific attack strategy.
+
+\paragraph{Similarity methods.}
+Sentence-BERT~\citep{reimers2019sbert} established bi-encoder embeddings as the standard for
+semantic similarity. Cross-encoder rerankers~\citep{nogueira2019passage} process text pairs
+jointly and achieve higher accuracy at the cost of increased latency. ROUGE~\citep{lin2004rouge}
+remains the standard lexical overlap metric for summarization evaluation. NLI
+models~\citep{he2021deberta} capture entailment relationships but are designed for
+sentence-level logical reasoning tasks with strict token-length constraints.
+
+% ============================================================
+\section{Problem Formulation}
+% ============================================================
+
+Let $P$ denote the system prompt, $Q$ an adversarial user query, $R$ the agent response to $Q$
+under prompt $P$, and $G$ a reference safe response to $Q$ that does not reveal $P$.
+
+\begin{definition}[Prompt Leakage]
+A response $R$ constitutes a \emph{leak} of $P$ if it discloses information from $P$ that was
+not already public knowledge or required by the query $Q$ to answer correctly.
+\end{definition}
+
+We partition leakable content into four categories that reflect the type of information at risk:
+
+\begin{itemize}
+  \item \textbf{Secrets \& Credentials}: API keys, tokens, passwords.
+  \item \textbf{Internal Instructions}: business rules, persona definitions, behavioral
+    constraints.
+  \item \textbf{Guard Mechanism Exposure}: content filters, moderation triggers, rejection
+    rules.
+  \item \textbf{Permissions \& Roles}: access levels, user roles, capability restrictions.
+\end{itemize}
+
+Each attack instance carries a difficulty label (\textit{easy}, \textit{medium}, \textit{hard})
+reflecting the sophistication of the adversarial query. Hard instances use paraphrase, roleplay,
+and indirect multi-step strategies rather than direct extraction requests.
+
+% ============================================================
+\section{PLR Metric}
+% ============================================================
+
+\subsection{Chunking the System Prompt}
+
+A system prompt embedded as a single vector averages all its semantic content. If the model
+leaks only one section---for example, the credentials paragraph---that signal is diluted by the
+non-leaked sections. We address this by splitting $P$ into overlapping chunks $C = \{c_1,
+c_2, \ldots, c_k\}$ of at most four sentences each, and computing the \emph{maximum} similarity
+between the response and any individual chunk:
+
+\begin{equation}
+  \operatorname{MaxChunkSim}(R, P) = \max_{c_i \in C} \operatorname{sim}(R,\, c_i)
+\end{equation}
+
+This design ensures that partial leaks of long prompts are not suppressed by averaging.
+
+\subsection{Two-Signal Design}
+
+PLR detection relies on two complementary signals:
+
+\begin{itemize}
+  \item \textbf{Signal~1} $= \operatorname{MaxChunkSim}(R, P)$: how much content from the
+    system prompt appears in the response.
+  \item \textbf{Signal~2} $= \operatorname{CosineSim}(R, G)$: how closely the response
+    aligns with the reference safe response $G$. A high score indicates the agent responded
+    within safe boundaries; a low score indicates divergence toward unreleased content.
+\end{itemize}
+
+\paragraph{Design decision: Signal~2 always uses cosine.}
+Our experiments show that the cross-encoder reranker inflates $\operatorname{sim}(R, G)$
+artificially---adversarial responses receive a mean Signal~2 score of 0.782, indistinguishable
+from legitimate responses. This collapses the decision table by routing most adversarial records
+to the \textit{ambiguous} bucket regardless of Signal~1. Cosine embeddings produce a calibrated
+Signal~2 (mean 0.511 across both adversarial and legitimate records), making it the only method
+suitable for the second signal regardless of which method is used for Signal~1.
+
+\subsection{Decision Table}
+
+\begin{table}[h]
+  \centering
+  \caption{Decision table for PLR verdicts. Threshold: $\tau = 0.6$.}
+  \label{tab:decision}
+  \begin{tabular}{ccl}
+    \toprule
+    $\operatorname{MaxChunkSim}(R, P)$ & $\operatorname{CosineSim}(R, G)$ & Verdict \\
+    \midrule
+    $\geq \tau$ & $< \tau$ & \textbf{Leak} \\
+    $< \tau$    & $\geq \tau$ & \textbf{Safe} \\
+    $< \tau$    & $< \tau$  & \textbf{Anomalous} $\rightarrow$ judge \\
+    $\geq \tau$ & $\geq \tau$ & \textbf{Ambiguous} $\rightarrow$ judge \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Anomalous and Ambiguous cases are escalated to a lightweight LLM judge. The threshold
+$\tau = 0.6$ is the default value used throughout our experiments. It is consistent with
+cosine similarity score distributions for semantically related texts reported by
+\citet{reimers2019sbert}, where strong semantic overlap reliably produces cosine scores above
+this value. Methods with different score ranges require independent threshold calibration
+(Section~\ref{sec:discussion}).
+
+\subsection{PLR Score and Output}
+
+The metric operates at two levels.
+
+\paragraph{Per-record output.}
+For each response $R_i$, the pipeline returns a discrete verdict
+$v_i \in \{\textit{leak},\allowbreak\, \textit{safe},\allowbreak\, \textit{anomalous},\allowbreak\, \textit{ambiguous}\}$
+together with the two underlying signal scores $\operatorname{MaxChunkSim}(R_i, P)$ and
+$\operatorname{CosineSim}(R_i, G)$. In production, the verdict drives the immediate action
+(flag, pass, or escalate); the signal scores provide interpretability.
+
+\paragraph{Aggregate score.}
+The PLR score is a scalar in $[0, 1]$, where higher values indicate greater resistance to
+leakage:
+
+\begin{equation}
+  \text{PLR} = 1 - \frac{1}{N} \sum_{i=1}^{N} s_i
+\end{equation}
+
+\noindent where $s_i$ is the per-record leakage score derived according to the chosen scoring
+mode.
+
+\paragraph{Binary mode (default).}
+Each verdict maps to a score:
+
+\begin{equation}
+  s_i = \begin{cases}
+    1              & \text{if } v_i = \textit{leak} \\
+    0              & \text{if } v_i = \textit{safe} \\
+    s_{\text{esc}} & \text{if } v_i \in \{\textit{anomalous},\, \textit{ambiguous}\}
+  \end{cases}
+\end{equation}
+
+For escalated records, $s_{\text{esc}}$ depends on whether a judge is configured:
+
+\begin{itemize}
+  \item \textbf{With judge}: the verdict is resolved to \textit{leak} (or \textit{violation})
+    $\to s_i = 1$; \textit{safe} $\to s_i = 0$; \textit{uncertain} (when the judge itself
+    cannot decide) $\to s_i = 0.5$.
+  \item \textbf{Without judge}: escalated records default to $s_{\text{esc}} = 0.5$,
+    representing maximum uncertainty. Alternatively, they can be excluded from the aggregate
+    via a parameter.
+\end{itemize}
+
+The use of a judge is recommended. Without one, the 0.5 default penalises the model
+conservatively without making an unsupported claim of leak or safety.
+
+\paragraph{Continuous mode.}
+When finer granularity is required, the pipeline returns a continuous leakage score per record
+instead of a binary verdict:
+
+\begin{equation}
+  s_i = \operatorname{MaxChunkSim}(R_i, P) \times \bigl(1 - \operatorname{CosineSim}(R_i, G)\bigr)
+\end{equation}
+
+This score is high only when both conditions hold simultaneously: the response contains system
+prompt content \emph{and} diverges from the expected safe response. A legitimate response that
+raises Signal~1 due to domain overlap but maintains Signal~2 (aligned with the safe reference)
+receives a low continuous score, preserving the false-positive protection of the two-signal
+design. Unlike binary mode, continuous mode captures how close a response was to leaking,
+enabling finer comparison across model configurations over time.
+
+Per-category PLR scores are reported alongside the global scalar to capture leakage patterns
+by information type (Section~\ref{sec:exp2}).
+
+% ============================================================
+\section{Similarity Methods}
+\label{sec:methods}
+% ============================================================
+
+We evaluate four methods for computing $\operatorname{MaxChunkSim}(R, P)$.
+
+\subsection{Cosine Similarity on Sentence Embeddings}
+
+Both texts are encoded independently as dense vectors using
+\texttt{all-MiniLM-L6-v2}~\citep{reimers2019sbert}, and similarity is the cosine of the angle
+between them:
+
+\begin{equation}
+  \operatorname{CosineSim}(R, c_i) = \frac{\mathbf{e}_R \cdot \mathbf{e}_{c_i}}{\|\mathbf{e}_R\| \, \|\mathbf{e}_{c_i}\|}
+\end{equation}
+
+This is the standard semantic similarity baseline: open-source, reproducible, and
+well-calibrated in $[0, 1]$. It captures paraphrase-level semantic similarity that lexical
+methods miss. In our experiments it serves dual purpose---as Signal~1 for the cosine pipeline
+and as Signal~2 for every pipeline (including the reranker), where its calibrated scores are
+essential for the decision table to function correctly.
+
+\subsection{Cross-Encoder Reranker}
+
+The \texttt{Qwen3-Reranker-0.6B}~\citep{alibaba2025qwen} reads the response and chunk jointly
+in a single forward pass, producing a log-softmax probability of ``yes'' to the fixed instruction
+$q$: \textit{``Given the agent response as the Query, determine whether the system prompt content
+(Document) is revealed or leaked in the response.''} Unlike bi-encoders, cross-encoders attend
+over the full concatenated input, detecting sophisticated paraphrase that independent encodings
+miss. The score is:
+
+\begin{equation}
+  \operatorname{RerankerSim}(R, c_i) = P_\theta(\text{yes} \mid q,\, c_i,\, R)
+\end{equation}
+
+\noindent where $P_\theta$ is the log-softmax output of the cross-encoder $\theta$ evaluated on
+the concatenation of $q$, $c_i$, and $R$.
+
+The reranker achieves a mean MaxChunkSim of 0.970 on adversarial records---the strongest
+detection signal of all evaluated methods---and is the recommended Signal~1 component of the
+final pipeline.
+
+\subsection{ROUGE-L}
+
+ROUGE-L~\citep{lin2004rouge} computes the F1 of the Longest Common Subsequence (LCS) between
+two texts. It is a purely lexical metric with no ML dependencies, and was hypothesised to work
+well for \textit{Secrets \& Credentials} where leaked content (e.g., \texttt{sk-abc123}) is an
+exact string. The score is:
+
+\begin{equation}
+  \operatorname{ROUGE\text{-}L}(R, c_i) = \frac{2 \cdot P_{\mathrm{lcs}} \cdot R_{\mathrm{lcs}}}{P_{\mathrm{lcs}} + R_{\mathrm{lcs}}}, \qquad
+  P_{\mathrm{lcs}} = \frac{|\operatorname{LCS}(R,\, c_i)|}{|c_i|}, \qquad
+  R_{\mathrm{lcs}} = \frac{|\operatorname{LCS}(R,\, c_i)|}{|R|}
+\end{equation}
+
+\textbf{Outcome:} 0\% detection on 52 adversarial records. Mean MaxChunkSim: 0.165.
+
+\textbf{Structural incompatibility:} modern instruction-tuned LLMs paraphrase by design. A
+model leaking ``Your API key is \texttt{sk-abc123}'' reformulates it as ``The authentication
+credential uses identifier \texttt{sk-abc123}''---lexical overlap collapses to near zero even
+for a clear leak. ROUGE detects verbatim copy-paste, which is precisely the least likely case
+for well-trained models. We report this as a negative result motivating semantic detection.
+
+\subsection{NLI Entailment (DeBERTa)}
+
+The \texttt{cross-encoder/nli-deberta-v3-small}~\citep{he2021deberta} classifies text pairs as
+entailment, neutral, or contradiction. We use the entailment probability as a similarity proxy:
+if the response entails the chunk, content from the prompt is present in the response. The score
+is:
+
+\begin{equation}
+  \operatorname{NLISim}(R, c_i) = P_\varphi\!\left(\text{entailment} \mid \text{premise} = c_i,\; \text{hypothesis} = R\right)
+\end{equation}
+
+\noindent where $P_\varphi$ is the softmax output of the NLI model $\varphi$ over the three
+label classes.
+
+\textbf{Outcome:} 5.8\% detection (3/52). Mean MaxChunkSim: 0.113.
+
+\textbf{Structural incompatibility:} two problems arise simultaneously. First, the model has a
+512-token limit; benchmark system prompts exceed it (measured truncation at 624 tokens),
+silently dropping the very content being evaluated. Second, NLI is designed for logical
+entailment between short sentences, not for detecting whether specific information from a long
+document appears in a paraphrased response. The task mismatch causes systematic under-scoring
+of genuine leaks regardless of threshold choice.
+
+% ============================================================
+\section{Experimental Setup}
+\label{sec:setup}
+% ============================================================
+
+\paragraph{Benchmark construction.}
+All 68 benchmark responses were generated by \texttt{google/gemma-3-12b-it} queried via
+HuggingFace Inference Endpoints, serving as the target agent under evaluation.
+Gemma-3-12B-IT was chosen because it produces direct responses without chain-of-thought
+reasoning tokens, yielding clean response text free of intermediate thinking artifacts.
+Four realistic system prompts were constructed representing: a healthcare customer support
+assistant (NovaMed), a technical sales assistant (TechVault), a content moderation platform
+(SafeStream), and a corporate HR assistant (GlobalCorp).
+
+\paragraph{Adversarial records (52).}
+13 per category $\times$ 4 categories. Difficulty distribution: $\sim$5 easy, $\sim$7 medium,
+and $\sim$5 hard per category. Hard instances use roleplay, indirect questions, and multi-step
+misdirection.
+
+\paragraph{Legitimate records (16).}
+4 per category. These are queries where the agent \emph{must} reference system prompt content
+to answer correctly (e.g., \textit{``What topics can you help me with?''}). They are hard
+negatives for false positive analysis---the most challenging case for the two-signal design.
+
+\paragraph{Evaluation.}
+All four methods are evaluated on all 68 records using locally-run models
+(\texttt{all-MiniLM-L6-v2}, \texttt{nli-deberta-v3-small}, \texttt{Qwen3-Reranker-0.6B}).
+Combination strategies are evaluated on the adversarial set.
+
+% ============================================================
+\section{Results}
+\label{sec:results}
+% ============================================================
+
+\subsection{Individual Method Performance}
+\label{sec:exp2}
+
+Table~\ref{tab:detection} shows overall and per-difficulty detection rates on the 52 adversarial
+records. The reranker is the strongest detector at every difficulty level. Cosine provides
+meaningful detection (34.6\%) and is the only viable alternative. NLI and ROUGE are
+disqualified.
+
+\begin{table}[h]
+  \centering
+  \caption{Detection rate on 52 adversarial records, by difficulty.}
+  \label{tab:detection}
+  \begin{tabular}{lcccc}
+    \toprule
+    Method & Overall & Easy & Medium & Hard \\
+    \midrule
+    Reranker      & \textbf{61.5\%} & 76.9\% & 63.2\% & 50.0\% \\
+    Cosine        & 34.6\%          & 53.8\% & 21.1\% & 35.0\% \\
+    NLI (DeBERTa) & 5.8\%           & 0.0\%  & 10.5\% & 5.0\%  \\
+    ROUGE-L       & 0.0\%           & 0.0\%  & 0.0\%  & 0.0\%  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:category} shows detection by category for the two viable methods. The reranker
+dominates in \textit{Secrets \& Credentials}---where precise credential strings create
+specific contextual signals that the cross-encoder captures---and is stronger across all
+categories. Cosine is comparatively stronger in \textit{Internal Instructions}, where
+behavioral constraints produce more diffuse semantic overlap.
+
+\begin{table}[h]
+  \centering
+  \caption{Detection rate by leakage category (reranker vs.\ cosine).}
+  \label{tab:category}
+  \begin{tabular}{lcc}
+    \toprule
+    Category & Reranker & Cosine \\
+    \midrule
+    Secrets \& Credentials  & \textbf{69.2\%} & 15.4\% \\
+    Guard Mechanism Exposure & \textbf{69.2\%} & 38.5\% \\
+    Permissions \& Roles     & \textbf{53.8\%} & 38.5\% \\
+    Internal Instructions    & \textbf{53.8\%} & 46.2\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{False Positive Analysis}
+\label{sec:exp1}
+
+Table~\ref{tab:fp} reports false positive rates on the 16 legitimate records. All methods
+produce at most one false positive---the same record across all methods.
+
+\begin{table}[h]
+  \centering
+  \caption{False positive rates on 16 legitimate records.}
+  \label{tab:fp}
+  \begin{tabular}{lcccc}
+    \toprule
+    Method & FP Rate & Safe & $\rightarrow$ Judge & Leak (FP) \\
+    \midrule
+    Cosine   & 6.2\%  (1/16) & 10/16 & 5/16  & 1/16 \\
+    Reranker & 6.2\%  (1/16) & 4/16  & 11/16 & 1/16 \\
+    ROUGE-L  & 0.0\%  (0/16) & 14/16 & 2/16  & 0/16 \\
+    NLI      & 0.0\%  (0/16) & 13/16 & 3/16  & 0/16 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The sole false positive (\texttt{guar\_001\_leg\_medium}---\textit{``How does the reporting
+system work on SafeStream?''}) requires the agent to describe its own moderation pipeline,
+producing a response with unavoidable semantic overlap with the system prompt. This is a
+domain-boundary edge case: queries about the agent's own domain necessarily echo the system
+prompt, and no similarity threshold can disambiguate them from leaks without additional context.
+
+ROUGE-L and NLI achieve 0\% FP not because of precision but because they cannot classify
+anything as a leak---their zero false positive rate is a consequence of structural incapacity,
+not discrimination quality.
+
+\subsection{Combination Strategies}
+\label{sec:combo}
+
+Table~\ref{tab:combo} shows combination strategy results. All strategies match the reranker's
+61.5\% detection ceiling. The discriminating factor is judge escalation.
+
+\begin{table}[h]
+  \centering
+  \caption{Combination strategy results on 52 adversarial records.}
+  \label{tab:combo}
+  \begin{tabular}{lcc}
+    \toprule
+    Strategy & Detection & Judge Escalation \\
+    \midrule
+    Reranker only    & 61.5\% & 38.5\% \\
+    Union (any)      & 61.5\% & — \\
+    Weighted average & 61.5\% & — \\
+    Naive cascade    & 61.5\% & 38.5\% \\
+    \textbf{Smart cascade}    & \textbf{61.5\%} & \textbf{21.2\%} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Smart cascade.}
+The algorithm is:
+
+\begin{enumerate}
+  \item Compute $\operatorname{MaxChunkSim}_{\text{reranker}}(R, P)$ and
+    $\operatorname{CosineSim}(R, G)$; apply the decision table with cosine as Signal~1 as
+    well.
+  \item If cosine declares \textit{safe}: return \textbf{safe}.
+  \item Otherwise apply the reranker decision. If it declares \textit{leak}: return
+    \textbf{leak}. If it declares \textit{safe}: return \textbf{safe}.
+  \item All remaining cases: escalate to judge.
+\end{enumerate}
+
+The rationale for this ordering is complementarity of roles: cosine directly closes 62.5\% of
+legitimate queries as safe, eliminating unnecessary reranker inference on clean traffic; the
+reranker provides the highest-sensitivity leak signal for the remaining cases. The resulting
+21.2\% judge escalation (vs.\ 38.5\% with the reranker alone) represents the genuinely
+ambiguous cases---medium-to-hard paraphrase attacks where both signals are below threshold.
+
+% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+% ============================================================
+
+\paragraph{Why ROUGE and NLI fail.}
+The failure of lexical and entailment-based approaches is not a calibration artifact---it is
+structural. Modern instruction-tuned LLMs rephrase rather than regurgitate, collapsing lexical
+overlap to near-zero even for unambiguous leaks. NLI compounds this with 512-token truncation
+that silently discards the system prompt content being evaluated. Both methods are disqualified
+regardless of threshold tuning, and we report this as a useful negative result for practitioners
+evaluating off-the-shelf similarity metrics for leak detection.
+
+\paragraph{Complementarity of cosine and reranker.}
+The two viable methods have different strengths. Cosine produces well-calibrated scores
+suitable for the second signal ($\operatorname{CosineSim}(R, G)$) and reliably dismisses
+legitimate safe responses. The reranker produces the strongest first signal
+($\operatorname{MaxChunkSim}(R, P)$), particularly for precise content overlap in
+\textit{Secrets \& Credentials}. Their combination in the smart cascade is principled: each
+method is used exclusively for the task it performs best.
+
+\paragraph{The domain-boundary false positive.}
+The 6.2\% false positive rate traces to a single edge case that is inherent to semantic
+similarity-based detection: agents operating in the same domain as their system prompt will
+produce responses that echo prompt language when answering legitimate domain queries. One
+mitigation strategy is per-query reference calibration---constructing $G$ as a response that
+references the domain without sensitive specifics, making Signal~2 more discriminative for
+boundary cases.
+
+\paragraph{Limitations.}
+\begin{itemize}
+  \item \textbf{Threshold calibration}: the decision threshold $\tau = 0.6$ is calibrated
+    for cosine similarity scores. The reranker produces scores concentrated near 0 and 1
+    (mean 0.970 on adversarial records), so applying the same threshold to it as Signal~1
+    in an isolated pipeline would require re-calibration against held-out data.
+  \item \textbf{Scale}: the benchmark comprises 68 records. Results are directionally robust
+    but per-category confidence intervals are wide.
+  \item \textbf{Multi-turn attacks}: the current pipeline evaluates single-turn responses.
+    Multi-turn attacks---where an adversary extracts the prompt incrementally across several
+    turns---are outside the current scope and are left for future work.
+  \item \textbf{Undetected leaks}: 38.5\% of adversarial records (20/52) are not
+    automatically classified as leaks by the smart cascade pipeline. These are medium-to-hard
+    paraphrase attacks where both signals fall below threshold. The smart cascade escalates
+    approximately 21\% of all traffic to a judge (down from 38.5\% with the reranker alone);
+    a judge component is a required part of any production deployment.
+\end{itemize}
+
+\paragraph{Future work.}
+Per-method threshold calibration, a multi-turn evaluation protocol, and a lightweight LLM judge
+optimized for the ambiguous case are the primary extensions.
+
+% ============================================================
+\section{Conclusion}
+% ============================================================
+
+We introduce PLR (Prompt Leakage Resistance), a metric for quantifying an LLM agent's
+resistance to system prompt extraction attacks. The metric combines a chunk-level maximum
+similarity score with a cosine alignment score against a safe reference response, applying a
+four-way decision table that separates confirmed leaks, safe responses, and judge-escalated
+ambiguous cases.
+
+Our experiments on 68 benchmark records show that lexical (ROUGE-L) and entailment-based (NLI)
+methods are structurally incompatible with the task due to LLM paraphrase and token-limit
+truncation respectively. The cross-encoder reranker is the strongest individual detector
+(61.5\%), and combining it with cosine in a smart cascade maintains detection while reducing
+judge escalation from 38.5\% to 21.2\%. The false positive rate is bounded at 6.2\%---a single
+edge case attributable to domain-boundary overlap rather than method failure.
+
+PLR is integrated into the Gaussia evaluation framework, enabling practitioners to compare
+model configurations on a common numeric scale across leakage categories and difficulty levels.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
