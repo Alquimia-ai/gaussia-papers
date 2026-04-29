@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .env
+*.aux
+*.bbl
+*.blg
+*.log
+*.out

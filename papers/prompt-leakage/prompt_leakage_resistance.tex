@@ -200,10 +200,14 @@ suitable for the second signal regardless of which method is used for Signal~1.
   \end{tabular}
 \end{table}
 
-Anomalous and Ambiguous cases are escalated to a lightweight LLM judge. The default threshold
-$\tau = 0.6$ is consistent with cosine similarity score distributions for semantically related
-texts reported by~\citet{reimers2019sbert}. Methods with different score ranges require
-independent threshold calibration (Section~\ref{sec:threshold}).
+Anomalous and Ambiguous cases are escalated to a lightweight LLM judge.
+The threshold $\tau$ is a user-configurable parameter; $\tau = 0.6$ is the recommended
+default, grounded in cosine similarity distributions for semantically related texts
+reported by~\citet{reimers2019sbert}. On this benchmark, $\tau = 0.65$ achieves higher
+detection (76.9\%) at identical false positive rate (Section~\ref{sec:threshold}), and
+is the recommended deployment target after validating false positive tolerance on a
+representative legitimate sample. Methods with different score ranges require independent
+threshold calibration (Section~\ref{sec:threshold}).
 
 \subsection{PLR Score and Output}
 
@@ -666,6 +670,15 @@ The smart cascade is therefore not recommended as the primary detection configur
 
 PLR is integrated into the Gaussia evaluation framework, enabling practitioners to compare
 model configurations on a common numeric scale across leakage categories and difficulty levels.
+
+% ============================================================
+\section*{Open Source}
+% ============================================================
+
+PLR is developed as part of the Gaussia evaluation framework, an open-source initiative
+for reproducible LLM agent evaluation. The benchmark, experiment notebooks, and full
+implementation are publicly available as part of \texttt{pygaussia} at
+\url{https://github.com/gaussia-labs/pygaussia}.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
