@@ -45,37 +45,45 @@ in Multi-Turn Conversational AI}}
 \maketitle
 
 \begin{abstract}
-As conversational AI systems are deployed in role-constrained settings ---
-customer support agents, educational tutors, medical assistants --- measuring
-whether a model consistently adheres to its assigned role becomes a core quality
-requirement. This paper proposes \textbf{Role Adherence}, a metric for the
-Gaussia evaluation framework that quantifies role consistency across multi-turn
-conversations under a constructive definition: an assistant must actively exhibit
-the behaviour its role demands, not merely avoid out-of-scope content.
+As conversational AI systems are deployed in role-constrained settings
+(customer support agents, educational tutors, medical assistants), measuring
+whether a model consistently adheres to its assigned role becomes a core
+quality requirement. This paper proposes \textbf{Role Adherence}, a metric
+that quantifies role consistency across multi-turn conversations under a
+constructive definition: an assistant must actively exhibit the behaviour its
+role demands, not merely avoid out-of-scope content.
 
-We evaluate eight scoring methods on a controlled synthetic benchmark of
-150 turns (scope violations, tone violations, and constructive failures)
-across three dataset-size conditions ($n \in \{15, 50, 150\}$). Key findings:
-(1)~An LLM judge (\texttt{llama-3.3-70b-versatile}) achieves $F_1 = 0.979$
-at $n \geq 50$ with tight bootstrap confidence intervals [$0.952$,\,$1.000$],
-and is the only method that reads the role definition directly.
-(2)~Cosine similarity and $k$-NN reach AUC\,$\approx 1.0$ on the benchmark,
-but this is a structural artefact: deterministic metrics measure semantic
-proximity to a ground-truth reference, not role adherence per se --- a tone
-violation can be semantically indistinguishable from a role-adherent response.
-(3)~Mahalanobis Distance in 384-dimensional embedding space \emph{degrades}
-as $n$ grows (AUC: $0.963 \to 0.856$), confirming the curse of dimensionality.
-(4)~A PCA-based dimensionality reduction intended to address this problem
-inverts the adherence signal entirely (AUC\,$= 0.000$ at $n = 15$).
-(5)~KL Divergence provides near-random signal at small $n$ (AUC\,$= 0.537$)
-and converges weakly at large $n$ (AUC\,$= 0.877$), operating at the wrong
-level of abstraction. The metric uses an LLM-as-a-judge as its default scoring path, as it is
-the only method capable of reading the role definition and detecting tone
-violations and constructive failures. Deterministic semantic methods are
-available as a reproducible, cost-free alternative when ground truth is
-present, but empirical results show they act as \emph{semantic drift
-detectors} rather than genuine role adherence evaluators --- a distinction
-with direct consequences for production deployments.
+We evaluate eight scoring methods and the LLM judge in both output modes on a controlled
+synthetic benchmark of 150 turns (scope violations, tone violations, and
+constructive failures) across three dataset-size conditions
+($n \in \{15, 50, 150\}$). An LLM judge
+(\texttt{llama-3.3-70b-versatile}; \citealt{dubey2024llama3}) achieves
+$F_1 = 0.979$, $\kappa = 0.959$ at $n \geq 50$ and is the only method
+that reads the role definition directly, detecting all violation types
+including tone deviations and constructive failures. Deterministic methods
+(BERTScore, cosine similarity, $k$-NN) reach AUC\,$\approx 1.0$, but this
+is a structural artefact: they measure semantic proximity to a ground-truth
+reference and are blind to violations that are semantically close to the
+correct response. Distribution-based methods degrade or invert with corpus
+size: Mahalanobis Distance declines monotonically
+(AUC: $0.963 \to 0.856$), a PCA-based variant inverts the adherence signal
+entirely (AUC\,$= 0.000$ at $n = 15$), and KL Divergence converges to a
+weak ceiling (AUC\,$= 0.877$). The LLM judge in continuous mode, which extracts
+$P(\textsc{yes}) / (P(\textsc{yes}) + P(\textsc{no}))$ from the model's
+token distribution, achieves AUC\,$= 0.999$ with Gemma\,3-12B without
+requiring ground truth, enabling unified comparison with deterministic
+methods on the same scale.
+
+The metric uses an LLM-as-a-judge as its default scoring path, as it is
+the only method capable of detecting tone violations and constructive
+failures. Deterministic methods are available as a cost-free alternative
+when ground truth is present, but empirical results show they act as
+\emph{semantic drift detectors} rather than genuine role adherence
+evaluators.
+
+The metric is part of the Gaussia evaluation framework
+(\url{https://www.gaussia.ai/}). The implementation is open-source at
+\url{https://github.com/Alquimia-ai/pygaussia}.
 \end{abstract}
 
 % ---------------------------------------------------------------------------
@@ -92,10 +100,10 @@ the behaviour their role requires.
 Existing evaluation frameworks either measure role adherence at the level of
 individual turns in isolation \citep{zheng2023judging}, or rely entirely on
 LLM-based judges, which introduce reproducibility and cost concerns
-\citep{deriu2021survey}. This paper proposes a more complete metric that evaluates adherence across
-the full conversational context, uses an LLM-as-a-judge as its default
-scoring path, and offers deterministic semantic scoring as a reproducible
-alternative when ground-truth reference responses are available.
+\citep{deriu2021survey}. This paper proposes a more complete metric that evaluates adherence
+turn by turn with prior conversational context, uses an LLM-as-a-judge
+as its default scoring path, and offers deterministic semantic scoring
+as a reproducible alternative when ground-truth reference responses are available.
 
 % ---------------------------------------------------------------------------
 \section{Problem Statement}
@@ -157,45 +165,30 @@ execution. Both definitions are implementable within the proposed schema.
 
 \subsection{Conversational Context}
 
-When evaluating whether turn $t_i$ adheres to role $R$, the evaluator receives
-the full conversation history $T_{<i} = \{t_1, \ldots, t_{i-1}\}$. A turn
-evaluated in isolation may appear off-role but be entirely appropriate given
-prior context. Conversely, a turn evaluated in isolation may appear neutral but
-represent a pattern of escalating deviation only visible across the
-conversational arc.
+The default mode evaluates each turn individually: turn $t_i$ is scored by
+passing the role definition, the prior conversation history
+$T_{<i} = \{t_1, \ldots, t_{i-1}\}$, and the candidate response to the
+judge in a single call. This produces one score per turn and preserves
+per-turn interpretability. A turn evaluated without prior context may appear
+off-role but be entirely appropriate given what came before; conversely, a
+neutral-looking turn may be part of an escalating deviation only visible
+across the conversational arc.
 
-The alternative --- evaluating each turn independently --- is computationally
-cheaper and avoids context-window constraints in very long conversations. We
-note this as a valid trade-off for resource-constrained deployments but do not
-adopt it as the default behaviour.
+An alternative is to evaluate the full conversation in a single call
+(\texttt{evaluation\_granularity='conversation'}), which reduces inference
+cost at the expense of per-turn granularity. We note this as a valid
+trade-off for cost-sensitive deployments but do not adopt it as the default.
 
-% ---------------------------------------------------------------------------
-\section{Role Definition Schema}
-% ---------------------------------------------------------------------------
-
-\subsection{Placement in the Data Model}
-
-The role definition is a property of the conversational session, not of the
-metric. Two sessions with the same conversation content but different assigned
-roles represent fundamentally different evaluation scenarios. Accordingly,
-\texttt{chatbot\_role} is defined as a field on the \texttt{Dataset} object.
-
-An alternative considered was to pass the role as a parameter at metric
-instantiation time, which would allow evaluating the same dataset against
-multiple roles. This was discarded on the grounds that a dataset already
-carries implicit contextual assumptions: the way a user interacts with a
-customer support agent differs from how they interact with a coding assistant,
-even if the raw conversation text were identical. Separating the role from the
-session would break this coupling and weaken the semantic integrity of the
-dataset object.
-
-\subsection{Format}
-
-The role definition is provided as a free-form natural language string.
-This string is passed directly to all scoring methods: embedded alongside
-the candidate response in deterministic path computations, and injected
-verbatim into the LLM judge prompt. No structured schema or explicit field
-decomposition is required.
+\textbf{Role definition schema.} The role is provided as a free-form natural
+language string and is a property of the session, not of the metric.
+\texttt{chatbot\_role} is defined as a field on the \texttt{Dataset} object
+because a dataset already carries implicit contextual assumptions: the way a
+user interacts with a customer support agent differs from how they interact
+with a coding assistant, even if the raw conversation text were identical.
+Separating the role from the session would break this coupling. The string is
+passed directly to all scoring methods: embedded alongside the candidate
+response in deterministic path computations, and injected verbatim into the
+LLM judge prompt.
 
 % ---------------------------------------------------------------------------
 \section{Scoring Methodology}
@@ -239,13 +232,62 @@ $n$ separate scores aligned with Equation~\ref{eq:score}. In
 \texttt{'conversation'} mode the entire conversation is submitted in a
 single call, reducing inference cost at the expense of per-turn granularity.
 
-\textbf{Output mode.} The judge returns a \textbf{binary score} in
-$\{0, 1\}$ by default. Binary scoring is more consistent across calls;
-LLMs are generally not well-calibrated for numeric outputs. Continuous
-scoring in $[0, 1]$ is available as an option for deployments that
-prioritise granularity over reproducibility. When \texttt{include\_reason}
-is enabled, the judge additionally returns a natural-language justification
-for each per-turn score.
+\textbf{Output mode.} The judge supports two output modes
+(Section~\ref{sec:logprob}). \texttt{'binary'} (default) samples the model
+at temperature~0 and returns a hard $\{0, 1\}$ score per turn.
+\texttt{'continuous'} extracts $P(\textsc{yes})$ from the model's
+first-token log-probability distribution, producing a calibrated score in
+$[0, 1]$ without prompting the model for a number. When
+\texttt{include\_reason} is enabled, the judge additionally returns a
+natural-language justification for each per-turn score.
+
+\subsection{Output Modes: Binary and Continuous}
+\label{sec:logprob}
+
+The judge supports two output modes. \textbf{Binary mode} (default) samples
+the model at temperature~0 and returns a hard $\{0, 1\}$ decision per turn.
+\textbf{Continuous mode} extracts a calibrated adherence score from the
+model's first-token probability distribution by querying at temperature~1
+with \texttt{logprobs=True, top\_logprobs=10}, avoiding the calibration
+issues of prompting the model to produce a number directly.
+
+Let $\mathcal{Y}$ and $\mathcal{N}$ denote the sets of tokenisation
+variants for \textsc{yes} and \textsc{no} respectively
+(e.g.\ \texttt{"YES"}, \texttt{"Yes"}, \texttt{"yes"}). For each token
+$t_k$ in the top-$K$ list, let $\ell_k$ denote its log-probability. The
+continuous adherence score is:
+
+\begin{equation}
+  P(\textsc{yes}) = \frac{
+    \exp\!\bigl(\mathrm{LSE}_{k:\, t_k \in \mathcal{Y}}\; \ell_k\bigr)
+  }{
+    \exp\!\bigl(\mathrm{LSE}_{k:\, t_k \in \mathcal{Y}}\; \ell_k\bigr)
+    + \exp\!\bigl(\mathrm{LSE}_{k:\, t_k \in \mathcal{N}}\; \ell_k\bigr)
+  }
+  \label{eq:logprob}
+\end{equation}
+
+where $\mathrm{LSE}$ denotes log-sum-exp, aggregating probability mass
+across tokenisation variants without numerical underflow. When neither
+\textsc{yes} nor \textsc{no} appears in the top-$K$ list, the score
+defaults to $0.5$.
+
+\textbf{A non-obvious property of instruction-tuned models.}
+Some instruction-tuned models do not assign the highest probability to
+\textsc{yes} or \textsc{no} as their first token, even when explicitly
+instructed to do so. Gemma~3-12B assigns approximately~99\% of its
+first-token probability to the token \texttt{"Okay"}, with \textsc{yes}
+and \textsc{no} appearing as low-probability alternatives
+($\approx$0.5\% and $\approx$0.001\% respectively), a conversational
+prior from instruction tuning. Despite this, the \emph{relative} probability
+of \textsc{yes} versus \textsc{no} at the first token position encodes the
+model's judgment correctly, and AUC\,$= 0.999$ (Section~\ref{sec:logprob_results})
+confirms that this signal is a reliable discriminator.
+
+\textbf{Infrastructure requirement.} Continuous mode requires a deployment
+that exposes per-token log-probabilities. This is available in open-weight
+deployments (HuggingFace TGI, vLLM) but not in all commercial APIs. When
+logprobs are unavailable, binary mode remains the only option.
 
 \subsection{Deterministic Path}
 \label{sec:deterministic}
@@ -423,9 +465,8 @@ corpus size.
 
 \subsubsection{Lexical Metrics: Considered and Discarded}
 
-ROUGE \citep{lin2004rouge} and BLEU \citep{papineni2002bleu} measure n-gram
-overlap between candidate and reference texts. Both were considered and
-discarded as primary metrics for this use case.
+ROUGE and BLEU measure n-gram overlap between candidate and reference texts.
+Both were considered and discarded as primary metrics for this use case.
 
 Role-adherent responses are not expected to reproduce the exact phrasing of a
 reference --- they are expected to exhibit the same role-consistent behaviour
@@ -454,22 +495,12 @@ Sections~\ref{sec:setup}--\ref{sec:results}.
         agreement with the gold standard comparable to the LLM judge, while
         offering perfect reproducibility and zero per-inference cost.
 
-  \item[\textbf{H3}] Mahalanobis Distance detects tone violations with higher
-        precision than cosine similarity, by weighting low-variance stylistic
-        dimensions more heavily than high-variance topical dimensions.
-
-  \item[\textbf{H4}] KL Divergence provides effective signal for vocabulary
-        drift violations that embedding-based similarity metrics fail to
-        capture, because it operates directly on token-level distributions
-        rather than aggregated dense representations.
 \end{description}
 
 H1 motivates evaluating distribution-based methods across corpus sizes
 rather than at a single fixed point. H2 motivated exploring deterministic
 methods as a cost-effective alternative to the LLM judge;
-Section~\ref{sec:discussion} reports it refuted. H3 and H4 require
-per-violation-type evaluation and cannot be resolved from aggregate binary
-classification alone; this is addressed in Section~\ref{sec:discussion}.
+Section~\ref{sec:discussion} reports it refuted.
 
 % ---------------------------------------------------------------------------
 \section{Experimental Setup}
@@ -517,6 +548,8 @@ Conditions are cumulative: B includes all turns in A, and C includes all turns
 in B. This isolates the effect of dataset size on each scoring method while
 holding the role and violation distribution constant.
 
+\newpage
+
 \subsection{Scoring Methods}
 
 \begin{table}[h]
@@ -528,6 +561,7 @@ holding the role and violation distribution constant.
     \textbf{Method} & \textbf{Requires GT} & \textbf{Distribution-based} \\
     \midrule
     LLM judge (binary)         & No  & No  \\
+    LLM judge (continuous)     & No  & No  \\
     BERTScore F1               & Yes & No  \\
     Cosine similarity          & Yes & No  \\
     $k$-NN                     & Yes & No  \\
@@ -559,8 +593,8 @@ selection.
 
 Binary classifiers (NLI and LLM Judge) produce hard predictions directly.
 We report three statistics.
-\textbf{F1 per class} \citep{manning2008ir} is the harmonic mean of precision
-and recall for each class:
+\textbf{F1 per class} is the harmonic mean of precision and recall for each
+class:
 \begin{equation}
   F_1 = 2 \cdot \frac{P \cdot R}{P + R}
 \end{equation}
@@ -588,6 +622,8 @@ regularisation ($\lambda = 0.01$). KL Divergence uses Laplace-smoothed
 distributions restricted to the top-500 most frequent tokens in the
 ground-truth corpus. The LLM judge is run once per turn per condition at
 temperature~0.
+
+\newpage
 
 % ---------------------------------------------------------------------------
 \section{Results}
@@ -727,6 +763,95 @@ $F_1^{\text{macro}} = 0.979$, $\kappa = 0.959$, CI\,[$0.952$,\,$1.000$].
            evaluation conditions.}
   \label{fig:llm_ci}
 \end{figure}
+
+\newpage
+
+\subsection{LLM Judge: Continuous Mode}
+\label{sec:logprob_results}
+
+Three models were evaluated using the judge's continuous mode on the full
+benchmark ($n = 150$), each chosen for a specific purpose: Llama~3.3-70B
+for direct comparison with the binary judge of the same family;
+Llama~3.1-8B to test whether the approach scales to a smaller, cheaper
+model \citep{dubey2024llama3}; and Gemma~3-12B
+(March~2025) as a more recent model better optimised for instruction
+following, to test generalisation beyond the Llama family. A fourth
+model, Qwen3-14B, was evaluated but is excluded from
+Table~\ref{tab:logprob_results}: all 150 scores default to $0.5$ because
+\textsc{yes} and \textsc{no} do not appear in the top-10 log-probability
+list for any record, even with chain-of-thought generation disabled. This
+is a structural incompatibility between Qwen3's instruction-tuning format
+and the logprob approach.
+
+\begin{table}[ht]
+  \centering
+  \caption{LLM Judge (continuous mode): AUC, Average Precision, and mean
+           $P(\textsc{yes})$ by class ($n = 150$).
+           Sep.\,=\,mean(adh.)\,$-$\,mean(viol.).
+           Italic: inverted signal.}
+  \label{tab:logprob_results}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    \textbf{Model} & \textbf{AUC} & \textbf{AP} &
+    \textbf{Adh.} & \textbf{Viol.} & \textbf{Sep.} \\
+    \midrule
+    Gemma~3-12B   & \textbf{0.999} & \textbf{0.999}
+                  & 0.967 & 0.000 & $+0.967$ \\
+    Llama~3.3-70B & 0.883 & 0.767
+                  & 0.208 & 0.032 & $+0.176$ \\
+    Llama~3.1-8B  & \textit{0.303} & \textit{0.295}
+                  & \textit{0.536} & \textit{0.688} & $-0.153$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:logprob_gemma_viol} shows the per-violation breakdown for
+Gemma~3-12B, confirming uniform discrimination across all three violation
+types.
+
+\begin{table}[ht]
+  \centering
+  \caption{LLM Judge in continuous mode (Gemma~3-12B): mean
+           $P(\textsc{yes})$ by class ($n = 150$).}
+  \label{tab:logprob_gemma_viol}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Class} & \textbf{Mean $P(\textsc{yes})$} \\
+    \midrule
+    adherent              & 0.967 \\
+    scope\_violation      & 0.000 \\
+    tone\_violation       & 0.000 \\
+    constructive\_failure & 0.000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:unified_auc} places all continuous methods and the logprob
+judge side by side on AUC at $n = 150$, enabling a unified comparison
+across scoring families for the first time.
+
+\begin{table}[ht]
+  \centering
+  \caption{Unified AUC comparison across all methods ($n = 150$).
+           GT\,=\,ground-truth reference responses required.}
+  \label{tab:unified_auc}
+  \begin{tabular}{llr}
+    \toprule
+    \textbf{Method} & \textbf{GT} & \textbf{AUC} \\
+    \midrule
+    BERTScore F1            & Yes & 0.995 \\
+    Cosine similarity       & Yes & 0.994 \\
+    $k$-NN                  & Yes & 0.993 \\
+    KL Divergence           & Yes & 0.877 \\
+    Mahalanobis Dist.\      & Yes & 0.856 \\
+    PCA+Mahalanobis         & Yes & 0.219 \\
+    \midrule
+    LLM judge cont.\ (Gemma~3-12B)   & No  & \textbf{0.999} \\
+    LLM judge cont.\ (Llama~3.3-70B) & No  & 0.883 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \newpage
 % ---------------------------------------------------------------------------
 \section{Discussion}
@@ -837,10 +962,9 @@ violations in the benchmark (scope, tone, constructive failures) do not produce
 distinctive vocabulary patterns. An agent that answers a question in the wrong
 tone uses largely the same vocabulary as one that answers correctly. KL
 Divergence is blind to this distinction because it operates at the lexical
-level, not the semantic or pragmatic level. H4 cannot be confirmed from
-aggregate binary classification; the convergence to AUC\,$= 0.877$ suggests
-KL may serve as a rough vocabulary drift monitor but not as a primary adherence
-detector.
+level, not the semantic or pragmatic level. The convergence to AUC\,$= 0.877$
+suggests KL may serve as a rough vocabulary drift monitor but not as a primary
+adherence detector.
 
 \subsection{NLI: Insufficient for Role Adherence}
 
@@ -874,9 +998,48 @@ was obtained with \texttt{llama-3.3-70b-versatile}. A smaller model will
 produce substantially different results. Reporting LLM Judge performance
 without specifying the judge model is methodologically equivalent to reporting
 a deterministic metric without specifying its embedding model: a necessary
-parameter omitted. H3 cannot be directly tested with aggregate binary
-classification; per-violation-type evaluation is identified as a direction for
-future work.
+parameter omitted. Section~\ref{sec:logprob_discussion} extends the comparison by
+placing the LLM judge's continuous mode on the same AUC scale as the deterministic methods.
+
+\subsection{LLM Judge Continuous Mode: Unified AUC Comparison}
+\label{sec:logprob_discussion}
+
+The continuous mode experiment was motivated by a comparison gap: the binary
+judge produces $F_1$ and $\kappa$, while continuous methods produce AUC\@.
+These are not directly comparable. By extracting $P(\textsc{yes})$ from the
+judge model's token distribution (Section~\ref{sec:logprob}), the same
+judge family can be evaluated on AUC, placing all methods on a common scale.
+
+On this unified scale (Table~\ref{tab:unified_auc}), Gemma~3-12B in
+continuous mode reaches AUC\,$= 0.999$, matching the top deterministic
+methods.
+The meaningful difference lies not in the AUC value itself but in what each
+method measures. BERTScore, Cosine, and $k$-NN require ground-truth
+reference responses and measure semantic proximity to them, as established
+in Section~\ref{sec:discussion}. The LLM judge in continuous mode requires
+no ground truth and evaluates adherence by reading the role definition
+directly, including
+tone violations and constructive failures invisible to semantic similarity
+methods.
+
+Two additional findings from the logprob experiment carry practical
+significance. First, \textbf{model quality and recency outweigh size}:
+Gemma~3-12B (12B parameters, March~2025) substantially outperforms
+Llama~3.3-70B (70B parameters) on this task (AUC\,$0.999$
+vs.~$0.883$). This suggests that the approach is sensitive to the
+instruction-following quality of the judge model rather than its size.
+
+Second, \textbf{the 8B failure is a capacity problem, not a calibration
+problem}. Llama~3.1-8B assigns systematically higher $P(\textsc{yes})$ to
+violations than to adherent responses (mean separation $-0.153$,
+AUC\,$= 0.303$). This cannot be corrected by threshold tuning: the
+probability assignments are inverted. The result establishes a practical
+lower bound on the model capability required for reliable continuous scoring.
+
+The main practical constraint is infrastructure: continuous mode requires
+deployments that expose per-token log-probabilities
+(Section~\ref{sec:logprob}). When logprobs are unavailable, binary mode
+remains the only option.
 
 % ---------------------------------------------------------------------------
 \section{Configuration Parameters}
@@ -897,11 +1060,15 @@ also available. See Section~\ref{sec:results} for empirical characterisation
 of each method.
 
 \textbf{\texttt{output\_mode}} (default: \texttt{'binary'}) --- controls
-the LLM judge output format. \texttt{'binary'} returns a hard $\{0, 1\}$
-score per turn; \texttt{'continuous'} returns a float in $[0, 1]$. Binary
-scoring is more consistent across calls. Continuous scoring is more
-expressive but requires deliberate threshold selection. Applies only when
-\texttt{scoring\_method='llm\_judge'}.
+the LLM judge output format. \texttt{'binary'} samples the model at
+temperature~0 and returns a hard $\{0, 1\}$ score per turn.
+\texttt{'continuous'} extracts $P(\textsc{yes}) / (P(\textsc{yes}) +
+P(\textsc{no}))$ from the model's first-token log-probability distribution,
+producing a calibrated score in $[0, 1]$ (Section~\ref{sec:logprob}).
+Continuous mode requires a deployment that exposes per-token log-probabilities
+(e.g.\ HuggingFace TGI, vLLM); if the provider does not support logprobs,
+the framework falls back to \texttt{'binary'} automatically. Applies only
+when \texttt{scoring\_method='llm\_judge'}.
 
 \textbf{\texttt{evaluation\_granularity}} (default: \texttt{'turn'}) ---
 controls whether the judge evaluates each assistant turn with its prior
@@ -954,14 +1121,21 @@ Gaussia pattern. No changes to the statistical layer are required.
 \section{Future Work}
 % ---------------------------------------------------------------------------
 
-Two directions are identified for future development.
+Three directions are identified for future development.
+
+\textbf{Continuous mode capacity threshold.} The continuous mode experiment
+establishes that Llama~3.1-8B fails (AUC\,$= 0.303$, inverted signal)
+while Gemma~3-12B succeeds (AUC\,$= 0.999$). The minimum model capability
+required for reliable continuous scoring lies in this gap and has not been
+characterised. A systematic evaluation across model sizes and families
+would delimit this threshold and guide model selection in cost-constrained
+deployments.
 
 \textbf{Multimodal settings.} As conversational AI systems process images,
 audio, and video alongside text, role adherence evaluation must generalise
 beyond text-only responses. The LLM judge path extends naturally by
 requiring a vision-capable model; the deterministic path would require
-modality-appropriate similarity functions, such as CLIP-based similarity
-\citep{radford2021clip} for image content.
+modality-appropriate similarity functions, such as CLIP-based similarity for image content.
 
 \textbf{Re-evaluation on a larger and more diverse benchmark.} The current
 benchmark is synthetic and scoped to a single domain. As discussed in
@@ -1004,11 +1178,24 @@ at $n = 150$) is the only method that reliably detects all violation types,
 at the cost of per-call inference and dependence on judge model quality ---
 a variable that must be treated as a first-class design parameter.
 
+The LLM judge in continuous mode, which extracts $P(\textsc{yes})$ from
+the model's token distribution rather than sampling a binary decision,
+provides a calibrated adherence score without ground truth and enables
+unified AUC comparison with the deterministic methods. Gemma~3-12B achieves
+AUC\,$= 0.999$, matching the best deterministic methods on this benchmark
+while evaluating genuine role adherence rather than semantic proximity to a
+reference. The failure of Llama~3.1-8B (AUC\,$= 0.303$, inverted signal)
+confirms that the approach requires a model capable of reliably reasoning
+about role adherence at the first-token level.
+
 Primary directions for future work are: (1)~per-violation-type evaluation to
 test whether any deterministic method retains diagnostic value for specific
 violation categories; (2)~multi-domain benchmarking beyond the single fintech
-support agent domain used here; and (3)~cost-accuracy analysis of judge models
-to characterise the tradeoff between inference cost and detection quality.
+support agent domain used here; (3)~cost-accuracy analysis of judge models
+to characterise the tradeoff between inference cost and detection quality;
+and (4)~characterisation of the minimum model capability threshold for
+reliable continuous scoring, delimiting the gap observed between
+Llama~3.1-8B (AUC\,$= 0.303$) and Gemma~3-12B (AUC\,$= 0.999$).
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
