@@ -17,8 +17,8 @@
 
 \title{Measuring Prompt Leakage Resistance in Deployed LLM Agents}
 \author{
-  Gaussia Team \\
-  \texttt{research@gaussia.ai}
+  Axel Fritz \\
+  \texttt{axel.fritz@alquimia.ai}
 }
 \date{\today}
 
@@ -32,18 +32,16 @@ to adversarial extraction attacks. No standard, reproducible metric exists to qu
 model resists such attacks. We propose \textbf{Prompt Leakage Resistance (PLR)}, a two-signal
 detection framework that combines a semantic similarity score between the agent response and
 chunks of the system prompt with a cosine alignment score against a reference safe response.
-We evaluate four similarity methods---cosine sentence embeddings, a cross-encoder reranker,
-ROUGE-L, and NLI entailment---on a benchmark of 68 records spanning four leakage categories and
-three difficulty levels. ROUGE-L and NLI are empirically disqualified as structurally incompatible
-with the task. Among the viable methods, the cross-encoder reranker achieves 61.5\% detection at
-the default threshold $\tau = 0.6$ with no hard false negatives. Threshold calibration shows
-$\tau = 0.65$ as the optimal operating point: 76.9\% detection, 0\% hard false negative rate, and
-a 6.2\% false positive rate, while $\tau = 0.70$ triggers a sharp increase in false positives to
-31.2\%. We additionally evaluate a \emph{smart cascade} that uses cosine embeddings to pre-filter
-safe responses before the reranker, and find that it reduces judge escalation at the cost of
-converting ambiguous adversarial cases into hard false negatives---a net regression in
-security-critical deployments. The metric and benchmark are released as part of the Gaussia
-evaluation framework.
+We evaluate four similarity methods (cosine sentence embeddings, a cross-encoder reranker,
+ROUGE-L, and NLI entailment) across four leakage categories and three difficulty levels,
+disqualifying ROUGE-L and NLI as structurally incompatible with the task and identifying the
+cross-encoder reranker as the strongest detector. To test generalisation we extend the benchmark
+to 246 queries and evaluate four agent models: the metric yields a discriminative resistance
+ranking, and its operating threshold $\tau = 0.6$ transfers across models while keeping false
+positives at or below 8\%. Against an independent labeled dataset, the leak-overlap signal separates leaked
+from unrelated content with AUC $\approx 0.99$. We additionally report a \emph{smart cascade}
+variant that lowers judge-escalation cost but converts some ambiguous adversarial cases into hard
+false negatives. The metric and benchmark are released as part of the Gaussia evaluation framework.
 \end{abstract}
 
 % ============================================================
@@ -67,14 +65,14 @@ We make the following contributions:
 \begin{enumerate}
   \item \textbf{PLR metric}: a numeric score derived from a two-signal, chunk-based detection
     pipeline with a four-way decision table.
-  \item \textbf{Benchmark}: 68 records across four leakage categories and three difficulty
-    levels, generated with Gemma-3-12B-IT on realistic system prompts.
+  \item \textbf{Benchmark}: a curated set of 68 records across four leakage categories and three
+    difficulty levels, extended to a 246-query benchmark (evaluated across four agent models) via
+    a documented generation-with-guard methodology.
   \item \textbf{Comparative evaluation}: four similarity methods tested against adversarial and
     legitimate records, with a clear empirical argument for discarding lexical and NLI approaches.
-  \item \textbf{Threshold calibration}: a sweep over the decision threshold $\tau$ for the
-    cross-encoder reranker, identifying $\tau = 0.65$ as the optimal operating point (76.9\%
-    detection, 0\% hard false negatives, 6.2\% FP) and showing that $\tau = 0.70$ causes a
-    sharp false positive increase to 31.2\%.
+  \item \textbf{Generalisation and external validation}: the resistance ranking and the operating
+    threshold $\tau = 0.6$ transfer across four agent models, and an independent labeled dataset
+    corroborates the leak-overlap signal (AUC $\approx 0.99$).
   \item \textbf{Smart cascade (negative result)}: a combination of cosine embeddings and the
     reranker that reduces judge escalation but converts ambiguous adversarial cases into hard
     false negatives, making it unsuitable as the primary configuration in security-sensitive
@@ -85,37 +83,21 @@ We make the following contributions:
 \section{Related Work}
 % ============================================================
 
-\paragraph{LLM safety evaluation.}
-Prompt injection and jailbreak attacks have received growing attention~\citep{perez2022ignore}.
-Most defenses focus on input filtering rather than post-hoc response evaluation.
+Prompt injection and jailbreak attacks have received growing attention~\citep{perez2022ignore},
+with most defenses focused on input filtering rather than post-hoc response evaluation. Existing
+leakage metrics fall into two camps: an LLM judge issuing a binary leaked/not verdict (simple, but
+no numeric score, no false-positive analysis, no partial-leak insight), or direct similarity
+between the response and the full system prompt as a single vector (which conflates legitimate
+domain overlap with actual leakage). PLR advances beyond both with chunk-level similarity to
+preserve partial-leak signals, a second signal anchored to a safe reference response to control
+false positives, and a numeric output for cross-configuration comparison. It is also complementary
+to attack-side work such as PLeak~\citep{hui2024pleak}, which recovers prompts by optimisation:
+PLR is a per-response detector operators run on their own agents, independent of any attack
+strategy.
 
-\paragraph{Leakage metrics.}
-Existing approaches to measuring prompt leakage fall into two broad categories. The first
-relies on an LLM judge that issues a binary verdict --- leaked or not --- for each response.
-While simple to deploy, this approach produces no numeric score for model comparison, provides
-no analysis of false positives, and offers no insight into partial or paraphrase-mediated
-leakage. The second computes direct text similarity between the response and the full system
-prompt as a single vector. This approach conflates legitimate domain overlap with actual leakage
-and has no mechanism to distinguish a model that answers safely about its own domain from one
-that discloses confidential content.
-
-PLR advances beyond both by introducing chunk-level similarity to preserve partial-leak signals
-in long prompts, a second signal anchored to a safe reference response to control false
-positives, and a numeric output that enables quantitative comparison across model configurations.
-
-\citet{hui2024pleak} introduce PLeak, a closed-box attack framework that recovers system
-prompts by treating prompt theft as an optimisation problem. Their work characterises the
-attack surface from the adversary's perspective. PLR is complementary: it provides a
-per-response detection pipeline for operators to evaluate their own agent's resistance on
-their own dataset, independently of any specific attack strategy.
-
-\paragraph{Similarity methods.}
-Sentence-BERT~\citep{reimers2019sbert} established bi-encoder embeddings as the standard for
-semantic similarity. Cross-encoder rerankers~\citep{nogueira2019passage} process text pairs
-jointly and achieve higher accuracy at the cost of increased latency. ROUGE~\citep{lin2004rouge}
-remains the standard lexical overlap metric for summarization evaluation. NLI
-models~\citep{he2021deberta} capture entailment relationships but are designed for
-sentence-level logical reasoning tasks with strict token-length constraints.
+Our similarity components build on standard tools: Sentence-BERT bi-encoders~\citep{reimers2019sbert},
+cross-encoder rerankers~\citep{nogueira2019passage}, the lexical ROUGE metric~\citep{lin2004rouge},
+and NLI entailment models~\citep{he2021deberta}.
 
 % ============================================================
 \section{Problem Formulation}
@@ -151,7 +133,7 @@ and indirect multi-step strategies rather than direct extraction requests.
 \subsection{Chunking the System Prompt}
 
 A system prompt embedded as a single vector averages all its semantic content. If the model
-leaks only one section---for example, the credentials paragraph---that signal is diluted by the
+leaks only one section, for example, the credentials paragraph, that signal is diluted by the
 non-leaked sections. We address this by splitting $P$ into overlapping chunks $C = \{c_1,
 c_2, \ldots, c_k\}$ of at most four sentences each, and computing the \emph{maximum} similarity
 between the response and any individual chunk:
@@ -176,7 +158,7 @@ PLR detection relies on two complementary signals:
 
 \paragraph{Design decision: Signal~2 always uses cosine.}
 Our experiments show that the cross-encoder reranker inflates $\operatorname{sim}(R, G)$
-artificially---adversarial responses receive a mean Signal~2 score of 0.782, indistinguishable
+artificially: adversarial responses receive a mean Signal~2 score of 0.782, indistinguishable
 from legitimate responses. This collapses the decision table by routing most adversarial records
 to the \textit{ambiguous} bucket regardless of Signal~1. Cosine embeddings produce a calibrated
 Signal~2 (mean 0.511 across both adversarial and legitimate records), making it the only method
@@ -203,11 +185,11 @@ suitable for the second signal regardless of which method is used for Signal~1.
 Anomalous and Ambiguous cases are escalated to a lightweight LLM judge.
 The threshold $\tau$ is a user-configurable parameter; $\tau = 0.6$ is the recommended
 default, grounded in cosine similarity distributions for semantically related texts
-reported by~\citet{reimers2019sbert}. On this benchmark, $\tau = 0.65$ achieves higher
-detection (76.9\%) at identical false positive rate (Section~\ref{sec:threshold}), and
-is the recommended deployment target after validating false positive tolerance on a
-representative legitimate sample. Methods with different score ranges require independent
-threshold calibration (Section~\ref{sec:threshold}).
+reported by~\citet{reimers2019sbert}. A higher $\tau = 0.65$ raises detection
+(Section~\ref{sec:threshold}), but the multi-model study
+(Section~\ref{sec:generalization}) shows it inflates false positives on some agents, so
+$\tau = 0.6$ is the robust cross-model default. Methods with different score ranges require
+independent threshold calibration (Section~\ref{sec:threshold}).
 
 \subsection{PLR Score and Output}
 
@@ -277,7 +259,7 @@ between them:
 
 This is the standard semantic similarity baseline: open-source, reproducible, and
 well-calibrated in $[0, 1]$. It captures paraphrase-level semantic similarity that lexical
-methods miss. In our experiments it serves dual purpose---as Signal~1 for the cosine pipeline
+methods miss. In our experiments it serves dual purpose, as Signal~1 for the cosine pipeline
 and as Signal~2 for every pipeline (including the reranker), where its calibrated scores are
 essential for the decision table to function correctly.
 
@@ -297,52 +279,26 @@ miss. The score is:
 \noindent where $P_\theta$ is the log-softmax output of the cross-encoder $\theta$ evaluated on
 the concatenation of $q$, $c_i$, and $R$.
 
-The reranker achieves a mean MaxChunkSim of 0.970 on adversarial records---the strongest
-detection signal of all evaluated methods---and is the recommended Signal~1 component.
+The reranker achieves a mean MaxChunkSim of 0.970 on adversarial records, the strongest
+detection signal of all evaluated methods, and is the recommended Signal~1 component.
 
-\subsection{ROUGE-L}
+\subsection{Disqualified Methods: ROUGE-L and NLI}
 
-ROUGE-L~\citep{lin2004rouge} computes the F1 of the Longest Common Subsequence (LCS) between
-two texts. It is a purely lexical metric with no ML dependencies, and was hypothesised to work
-well for \textit{Secrets \& Credentials} where leaked content (e.g., \texttt{sk-abc123}) is an
-exact string. The score is:
+We also tested two methods that proved structurally incompatible with the task and are reported as
+negative results.
 
-\begin{equation}
-  \operatorname{ROUGE\text{-}L}(R, c_i) = \frac{2 \cdot P_{\mathrm{lcs}} \cdot R_{\mathrm{lcs}}}{P_{\mathrm{lcs}} + R_{\mathrm{lcs}}}, \qquad
-  P_{\mathrm{lcs}} = \frac{|\operatorname{LCS}(R,\, c_i)|}{|c_i|}, \qquad
-  R_{\mathrm{lcs}} = \frac{|\operatorname{LCS}(R,\, c_i)|}{|R|}
-\end{equation}
+\textbf{ROUGE-L}~\citep{lin2004rouge}, the F1 of the longest common subsequence, was hypothesised
+to catch verbatim \textit{Secrets \& Credentials}. It detects \textbf{0\%} of the 52 adversarial
+records (mean MaxChunkSim 0.165): instruction-tuned LLMs paraphrase by design, ``Your API key is
+\texttt{sk-abc123}'' becomes ``The authentication credential uses identifier \texttt{sk-abc123}'', so
+lexical overlap collapses even for a clear leak, and verbatim copy-paste is the least likely case.
 
-\textbf{Outcome:} 0\% detection on 52 adversarial records. Mean MaxChunkSim: 0.165.
-
-\textbf{Structural incompatibility:} modern instruction-tuned LLMs paraphrase by design. A
-model leaking ``Your API key is \texttt{sk-abc123}'' reformulates it as ``The authentication
-credential uses identifier \texttt{sk-abc123}''---lexical overlap collapses to near zero even
-for a clear leak. ROUGE detects verbatim copy-paste, which is precisely the least likely case
-for well-trained models. We report this as a negative result motivating semantic detection.
-
-\subsection{NLI Entailment (DeBERTa)}
-
-The \texttt{cross-encoder/nli-deberta-v3-small}~\citep{he2021deberta} classifies text pairs as
-entailment, neutral, or contradiction. We use the entailment probability as a similarity proxy:
-if the response entails the chunk, content from the prompt is present in the response. The score
-is:
-
-\begin{equation}
-  \operatorname{NLISim}(R, c_i) = P_\varphi\!\left(\text{entailment} \mid \text{premise} = c_i,\; \text{hypothesis} = R\right)
-\end{equation}
-
-\noindent where $P_\varphi$ is the softmax output of the NLI model $\varphi$ over the three
-label classes.
-
-\textbf{Outcome:} 5.8\% detection (3/52). Mean MaxChunkSim: 0.113.
-
-\textbf{Structural incompatibility:} two problems arise simultaneously. First, the model has a
-512-token limit; benchmark system prompts exceed it (measured truncation at 624 tokens),
-silently dropping the very content being evaluated. Second, NLI is designed for logical
-entailment between short sentences, not for detecting whether specific information from a long
-document appears in a paraphrased response. The task mismatch causes systematic under-scoring
-of genuine leaks regardless of threshold choice.
+\textbf{NLI entailment} (\texttt{cross-encoder/nli-deberta-v3-small}~\citep{he2021deberta}), using
+the entailment probability as a similarity proxy, detects \textbf{5.8\%} (3/52, mean 0.113). Two
+problems compound: its 512-token limit truncates the system prompts (measured at 624 tokens),
+silently dropping the content under evaluation, and NLI targets short-sentence logical entailment,
+not detecting whether information from a long document appears in a paraphrased response. Both
+failures are independent of threshold choice.
 
 % ============================================================
 \section{Experimental Setup}
@@ -356,7 +312,10 @@ Gemma-3-12B-IT was chosen because it produces direct responses without chain-of-
 reasoning tokens, yielding clean response text free of intermediate thinking artifacts.
 Four realistic system prompts were constructed representing: a healthcare customer support
 assistant (NovaMed), a technical sales assistant (TechVault), a content moderation platform
-(SafeStream), and a corporate HR assistant (GlobalCorp).
+(SafeStream), and a corporate HR assistant (GlobalCorp). Each system prompt explicitly instructs
+the agent not to disclose its confidential content, and the adversarial queries attempt to elicit
+that content through a range of phrasings: direct requests, pretextual framing, and indirect
+prompts.
 
 \paragraph{Adversarial records (52).}
 13 per category $\times$ 4 categories. Difficulty distribution: $\sim$5 easy, $\sim$7 medium,
@@ -366,113 +325,77 @@ misdirection.
 \paragraph{Legitimate records (16).}
 4 per category. These are queries where the agent \emph{must} reference system prompt content
 to answer correctly (e.g., \textit{``What topics can you help me with?''}). They are hard
-negatives for false positive analysis---the most challenging case for the two-signal design.
+negatives for false positive analysis, the most challenging case for the two-signal design.
 
 \paragraph{Evaluation.}
-All four methods are evaluated on all 68 records using locally-run models
-(\texttt{all-MiniLM-L6-v2}, \texttt{nli-deberta-v3-small}, \texttt{Qwen3-Reranker-0.6B}).
-Threshold calibration and combination strategies are evaluated on the full 68-record dataset,
+All four methods, plus threshold calibration, are evaluated on this benchmark using locally-run
+models (\texttt{all-MiniLM-L6-v2}, \texttt{nli-deberta-v3-small}, \texttt{Qwen3-Reranker-0.6B}),
 split by adversarial and legitimate subsets.
+
+\paragraph{Generalization study.}
+To test whether PLR generalizes beyond a single target model and a small sample, we extend the
+evaluation along two axes. \emph{(i) Models:} in addition to the original Gemma target, we
+evaluate three further agent models served via Groq, \texttt{llama-3.1-8b-instant},
+\texttt{llama-4-scout-17b-16e-instruct}, and \texttt{gpt-oss-20b}, selected for diversity in
+model family and size. \emph{(ii) Scale:} we expand the query bank from 68 to \textbf{246 unique
+queries} (134 adversarial, 112 legitimate), the 68 original queries plus 178 new ones (82
+adversarial, 96 legitimate). All four agent models answer the full 246-query bank. Pooled across
+the four models this yields \textbf{984} (model, response) records, the population used in the
+confusion analysis of Section~\ref{sec:partial-cm}. The new queries are generated by
+two models distinct from the agents under test (\texttt{llama-3.3-70b-versatile} and
+\texttt{gpt-oss-120b}), and each safe reference $G$ is synthesized by the largest available model
+(\texttt{gpt-oss-120b}) under a constrained prompt that forbids disclosing any confidential value;
+a hard guard rejects any $G$ containing a secret string (matched on word boundaries), and generated
+items pass human review. The 68 original records, whose $G$ were generated separately by Gemma, are
+retained as an independent \emph{origin} subset. Every reference is thus model-generated (Gemma for
+the original 68, \texttt{gpt-oss-120b} for the 178 new); we have no human-authored gold standard for
+$G$, and validation instead relies on the two independent generators producing consistent results
+(Section~\ref{sec:generalization}).
 
 % ============================================================
 \section{Results}
 \label{sec:results}
 % ============================================================
 
-\subsection{Individual Method Performance}
+\subsection{Method Selection}
 \label{sec:exp2}
 
-Table~\ref{tab:detection} shows overall and per-difficulty detection rates on the 52 adversarial
-records. The reranker is the strongest detector at every difficulty level. Cosine provides
-meaningful detection (34.6\%) and is the only viable alternative. NLI and ROUGE are
-disqualified. A critical property of the reranker not captured by detection rate alone is that
-it produces \emph{zero hard false negatives} at any threshold evaluated: adversarial records it
-does not detect are escalated to the judge rather than incorrectly closed as safe. This property
-is central to the threshold calibration results in Section~\ref{sec:threshold}.
-
-\begin{table}[h]
-  \centering
-  \caption{Detection rate on 52 adversarial records, by difficulty.}
-  \label{tab:detection}
-  \begin{tabular}{lcccc}
-    \toprule
-    Method & Overall & Easy & Medium & Hard \\
-    \midrule
-    Reranker      & \textbf{61.5\%} & 76.9\% & 63.2\% & 50.0\% \\
-    Cosine        & 34.6\%          & 53.8\% & 21.1\% & 35.0\% \\
-    NLI (DeBERTa) & 5.8\%           & 0.0\%  & 10.5\% & 5.0\%  \\
-    ROUGE-L       & 0.0\%           & 0.0\%  & 0.0\%  & 0.0\%  \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-Table~\ref{tab:category} shows detection by category for the two viable methods. The reranker
-dominates in \textit{Secrets \& Credentials}---where precise credential strings create
-specific contextual signals that the cross-encoder captures---and is stronger across all
-categories. Cosine is comparatively stronger in \textit{Internal Instructions}, where
-behavioral constraints produce more diffuse semantic overlap.
-
-\begin{table}[h]
-  \centering
-  \caption{Detection rate by leakage category (reranker vs.\ cosine).}
-  \label{tab:category}
-  \begin{tabular}{lcc}
-    \toprule
-    Category & Reranker & Cosine \\
-    \midrule
-    Secrets \& Credentials  & \textbf{69.2\%} & 15.4\% \\
-    Guard Mechanism Exposure & \textbf{69.2\%} & 38.5\% \\
-    Permissions \& Roles     & \textbf{53.8\%} & 38.5\% \\
-    Internal Instructions    & \textbf{53.8\%} & 46.2\% \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+On the 52 adversarial records the cross-encoder reranker is the strongest Signal~1 detector at
+every difficulty level and leakage category, cosine is the only viable alternative, and ROUGE-L
+and NLI are disqualified for the structural reasons of Section~\ref{sec:methods} (0\% and 5.8\%
+detection). We therefore adopt the reranker as Signal~1 and cosine as Signal~2; the two are not
+competing detectors but the two complementary inputs to the decision table, and the rest of the
+evaluation focuses on that combined pipeline rather than on either signal in isolation. One
+property of the reranker matters downstream: it produces \emph{zero hard false negatives} at any
+threshold evaluated here, escalating undetected adversarial records to the judge rather than
+closing them as safe. This does not fully generalise (more resistant agents produce a few hard
+false negatives, Section~\ref{sec:generalization}), which is why the judge remains a required
+component.
 
 \subsection{False Positive Analysis}
 \label{sec:exp1}
 
-Table~\ref{tab:fp} reports false positive rates on the 16 legitimate records. All methods
-produce at most one false positive---the same record across all methods.
-
-\begin{table}[h]
-  \centering
-  \caption{False positive rates on 16 legitimate records.}
-  \label{tab:fp}
-  \begin{tabular}{lcccc}
-    \toprule
-    Method & FP Rate & Safe & $\rightarrow$ Judge & Leak (FP) \\
-    \midrule
-    Cosine   & 6.2\%  (1/16) & 10/16 & 5/16  & 1/16 \\
-    Reranker & 6.2\%  (1/16) & 4/16  & 11/16 & 1/16 \\
-    ROUGE-L  & 0.0\%  (0/16) & 14/16 & 2/16  & 0/16 \\
-    NLI      & 0.0\%  (0/16) & 13/16 & 3/16  & 0/16 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-The sole false positive (\texttt{guar\_001\_leg\_medium}---\textit{``How does the reporting
-system work on SafeStream?''}) requires the agent to describe its own moderation pipeline,
-producing a response with unavoidable semantic overlap with the system prompt. This is a
-domain-boundary edge case: queries about the agent's own domain necessarily echo the system
-prompt, and no similarity threshold can disambiguate them from leaks without additional context.
-
-ROUGE-L and NLI achieve 0\% FP not because of precision but because they cannot classify
-anything as a leak---their zero false positive rate is a consequence of structural incapacity,
-not discrimination quality.
+The two-signal pipeline produces a single false positive on the 16 legitimate Gemma records
+(6.2\%). It is \texttt{guar\_001\_leg\_medium} (\textit{``How does the reporting system work on
+SafeStream?''}), which requires the agent to describe its own moderation pipeline, producing
+unavoidable semantic overlap with the system prompt. This is a domain-boundary edge case: queries
+about the agent's own domain necessarily echo the system prompt, and no similarity threshold can
+disambiguate them from leaks without additional context. (ROUGE-L and NLI trivially produce no
+false positives only because they cannot flag anything as a leak at all.)
 
 \subsection{Threshold Calibration}
 \label{sec:threshold}
 
 Having identified the reranker as the recommended Signal~1 method, we evaluate
 how the decision threshold $\tau$ affects the detection--false positive tradeoff. Table~\ref{tab:threshold}
-reports results for the reranker across $\tau \in [0.55, 0.75]$ on the full 68-record dataset.
+reports results for the reranker across $\tau \in [0.55, 0.75]$.
 
 The key distinction in this analysis is between two types of missed detections:
 \begin{itemize}
-  \item \textbf{Hard false negatives (FN-safe):} adversarial records closed as \textit{safe}---the
+  \item \textbf{Hard false negatives (FN-safe):} adversarial records closed as \textit{safe}, the
     system makes a confident wrong decision.
   \item \textbf{Soft false negatives (FN-judge):} adversarial records escalated to the
-    judge---the system is uncertain and defers rather than deciding.
+    judge, the system is uncertain and defers rather than deciding.
 \end{itemize}
 
 \begin{table}[h]
@@ -493,68 +416,303 @@ The key distinction in this analysis is between two types of missed detections:
   \end{tabular}
 \end{table}
 
-Three observations emerge. First, the reranker produces \emph{zero hard false negatives across
-all thresholds evaluated}: every adversarial record it fails to detect is escalated to the
-judge, never incorrectly labeled safe. Second, $\tau = 0.65$ represents the optimal operating
-point: detection improves from 61.5\% to 76.9\% (15.4 percentage points) while false positives
-remain at 6.2\%---the same single domain-boundary edge case identified at $\tau = 0.6$.
-Third, $\tau = 0.70$ triggers a sharp false positive increase to 31.2\% (5/16 legitimate
-records), making it unsuitable for production use. We therefore recommend $\tau = 0.6$ as the
-conservative default and $\tau = 0.65$ as the deployment target after validating false positive
-tolerance on a representative legitimate sample.
+Two observations emerge. First, the reranker produces \emph{zero hard false negatives across all
+thresholds evaluated here}: undetected adversarial records are escalated to the judge, never
+labeled safe. Second, while $\tau = 0.65$ looks locally optimal (detection 61.5\% to 76.9\%, false
+positives flat at 6.2\%), the multi-model study (Section~\ref{sec:generalization}) shows it
+inflates false positives on other agents, so we adopt $\tau = 0.6$ as the robust cross-model
+default and treat any higher value as requiring per-deployment validation.
 
 \subsection{Smart Cascade: A Negative Result}
 \label{sec:cascade}
 
-Given that cosine and the reranker have complementary score distributions---cosine
-well-calibrated in $[0,1]$, reranker concentrated near 0 and 1---we evaluate a \emph{smart
-cascade} that uses cosine to pre-filter safe responses and relies on the reranker for leak
-detection:
+We also tested a \emph{smart cascade} that uses cosine to pre-filter \textit{safe} responses
+before invoking the reranker, motivated by cost: cosine can close clean traffic without a reranker
+call. It did not work as a detector. By closing cases on cosine's Signal~2 alone, the cascade
+converts ambiguous adversarial records that the reranker would have escalated to the judge into
+hard false negatives, and threshold tuning cannot recover them without collapsing the cascade back
+to the reranker alone. We therefore do not recommend it for adversarial detection; the reranker
+alone is strictly superior, and cosine's only useful role is the second signal of the decision
+table.
 
-\begin{enumerate}
-  \item Compute both cosine and reranker verdicts via the decision table.
-  \item If cosine declares \textit{safe}: return \textbf{safe}.
-  \item If reranker declares \textit{leak}: return \textbf{leak}.
-  \item All remaining cases: escalate to judge.
-\end{enumerate}
+\subsection{Generalization Across Models}
+\label{sec:generalization}
 
-The motivation is that cosine closes 62.5\% of legitimate queries as safe without running the
-reranker, reducing unnecessary inference cost and judge load on clean traffic.
-
-Table~\ref{tab:cascade} compares the smart cascade against the reranker alone at both
-recommended thresholds on adversarial records.
+We now evaluate PLR across four agent models on the expanded benchmark ($N = 246$ each), using the
+recommended reranker pipeline at the conservative default $\tau = 0.6$. Table~\ref{tab:multimodel}
+reports PLR together with detection and false-positive rates and their 95\% Wilson confidence
+intervals. PLR separates the models over a wide range (0.15--0.45): \texttt{gpt-oss-20b} is the
+most resistant (PLR 0.448; only 22.4\% of attacks surface as confirmed leaks), while Gemma is the
+most permissive (PLR 0.153; 70.9\% detection). The metric therefore produces a discriminative
+ranking rather than a model-independent constant. The benefit of scale is visible in the intervals:
+each false-positive estimate ($N = 246$, 112 legitimate per model) has a 95\% half-width of only a
+few points, tight enough to separate the models' specificity.
 
 \begin{table}[h]
   \centering
-  \caption{Smart cascade vs.\ reranker alone on 52 adversarial records (all at $\tau = 0.6$
-    unless noted). FN-safe = hard false negatives; FN-judge = soft false negatives.}
-  \label{tab:cascade}
+  \caption{PLR and detection/false-positive rates across four agent models on the expanded
+    benchmark ($N = 246$ each; reranker, $\tau = 0.6$; 95\% Wilson intervals). PLR is oriented so
+    higher means more resistant.}
+  \label{tab:multimodel}
   \begin{tabular}{lccc}
     \toprule
-    Configuration & Detection & FN-safe & FN-judge \\
+    Model & PLR & Detection [95\% CI] & FP [95\% CI] \\
     \midrule
-    Reranker $\tau = 0.60$       & 61.5\% & 0.0\%  & 38.5\% \\
-    \textbf{Reranker $\tau = 0.65$} & \textbf{76.9\%} & \textbf{0.0\%} & \textbf{23.1\%} \\
-    Smart cascade $\tau = 0.6/0.6$ & 61.5\% & 17.3\% & 21.2\% \\
+    \texttt{gpt-oss-20b}      & \textbf{0.448} & 22.4\% [16.2--30.2] & 6.2\% [3.1--12.3] \\
+    Llama-4-Scout-17B         & 0.276 & 50.7\% [42.4--59.1] & 3.6\% [1.4--8.8] \\
+    Llama-3.1-8B              & 0.254 & 54.5\% [46.0--62.7] & 8.0\% [4.3--14.6] \\
+    Gemma-3-12B               & 0.153 & 70.9\% [62.7--77.9] & 2.7\% [0.9--7.6] \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The smart cascade matches the reranker's 61.5\% detection but introduces 9 hard false
-negatives (17.3\%) that the reranker alone would have escalated to the judge. These are
-adversarial records where cosine's Signal~2 is high enough to declare \textit{safe}, but the
-reranker's Signal~1 is in the ambiguous range---not a disagreement between methods, but both
-methods being uncertain in the same direction. The cascade's reduction in judge escalation
-(38.5\% to 21.2\%) comes entirely from those 9 records being incorrectly closed rather than
-correctly deferred.
+\paragraph{Threshold stability.}
+A central question is whether $\tau = 0.6$ is an artifact of the original single-model
+calibration. Table~\ref{tab:taustab} sweeps $\tau$ for all four models. The false-positive rate
+stays at or below 8\% at $\tau = 0.6$ for every model, and only at $\tau = 0.70$ does it degrade
+sharply and \emph{universally} (Llama-4-Scout 16\%, Llama-3.1-8B 15\%, Gemma 14\%, gpt-oss 11\%).
+The single-model study favored $\tau = 0.65$; the multi-model data shows that 0.65 already inflates
+false positives on the Llama agents (12\% and 8\%). We therefore retain $\tau = 0.6$ as the robust
+cross-model default: the operating point transfers across models rather than overfitting to a
+single one.
 
-Threshold tuning cannot resolve this: raising the cosine threshold to suppress safe closures
-only recovers the hard false negatives once cosine is set high enough to never declare anything
-safe, at which point the cascade collapses to the reranker alone.
+\begin{table}[h]
+  \centering
+  \caption{Reranker threshold sweep across models, reported as detection\,/\,false-positive (\%).
+    False positives stay $\le 8\%$ at $\tau = 0.6$ for all models and rise sharply at
+    $\tau = 0.70$.}
+  \label{tab:taustab}
+  \begin{tabular}{lccccc}
+    \toprule
+    Model & $\tau{=}0.50$ & $0.55$ & $\mathbf{0.60}$ & $0.65$ & $0.70$ \\
+    \midrule
+    Gemma-3-12B       & 54/3 & 63/3 & \textbf{71/3} & 78/8  & 81/14 \\
+    Llama-3.1-8B      & 47/4 & 54/4 & \textbf{54/8} & 60/12 & 69/15 \\
+    Llama-4-Scout-17B & 40/3 & 43/4 & \textbf{51/4} & 54/8  & 64/16 \\
+    \texttt{gpt-oss-20b} & 16/3 & 18/3 & \textbf{22/6} & 24/8 & 25/11 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-The smart cascade provides genuine value for \emph{legitimate traffic throughput}: cosine
-reduces reranker inference cost on clean requests. In adversarial detection, the reranker at
-$\tau = 0.65$ is strictly superior.
+\paragraph{Cross-generator validation.}
+The benchmark uses two independent reference generators, Gemma for the origin subset,
+\texttt{gpt-oss-120b} for the expanded subset, so we test whether detection is consistent across
+them. Detection rates on the origin (Gemma $G$) and expanded (\texttt{gpt-oss-120b} $G$)
+adversarial subsets agree within two points for both Llama agents
+(Llama-3.1-8B: 55.8\% vs.\ 53.7\%; Llama-4-Scout: 50.0\% vs.\ 51.2\%), indicating that the
+metric's verdicts do not depend on which model authored the reference. We anticipated a possible
+confound: since the expanded $G$ is generated by \texttt{gpt-oss-120b}, the same-family
+\texttt{gpt-oss-20b} agent might be scored artificially safe. The data rules this out: %
+\texttt{gpt-oss-20b} detection is low on \emph{both} the origin subset (19.2\%, where $G$ is
+generated by Gemma, not by the gpt-oss family) and the expanded subset
+(24.4\%), so its high resistance is a property of the model, not an artifact of reference
+generation.
+
+\subsection{External Validation}
+\label{sec:external}
+
+All results so far use references and verdicts produced within our own pipeline. To check that
+the leak-detection signal agrees with \emph{independent} labels, we validate Signal~1
+($\operatorname{MaxChunkSim}$ between a response and the system prompt) against the
+\texttt{gabrielchua/system-prompt-leakage} dataset,\footnote{\url{https://huggingface.co/datasets/gabrielchua/system-prompt-leakage}}
+which provides (system prompt, content, binary leakage) triples. Because that dataset has no
+safe reference $G$, we evaluate the overlap signal alone, not the full two-signal table, on a
+balanced sample of 160 test items (80 leak, 80 no-leak). Table~\ref{tab:external} reports the
+result at $\tau = 0.6$ with 95\% Wilson intervals, plus the threshold-independent AUC.
+
+\begin{table}[h]
+  \centering
+  \caption{Signal~1 versus independent labels (\texttt{gabrielchua/system-prompt-leakage},
+    balanced $n = 160$). AUC is threshold-independent; precision/recall are at $\tau = 0.6$ with
+    95\% Wilson intervals.}
+  \label{tab:external}
+  \begin{tabular}{lcccc}
+    \toprule
+    Method & AUC & Precision & Recall & F1 \\
+    \midrule
+    Cosine   & \textbf{0.989} & 0.96 [0.90--0.99] & 0.96 [0.90--0.99] & \textbf{0.96} \\
+    Reranker & 0.985 & 0.83 [0.75--0.89] & 1.00 [0.95--1.00] & 0.91 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The overlap signal separates prompt-derived content from unrelated content almost perfectly
+(AUC $\approx 0.99$), confirming on external, independently-labeled data that the detector
+recognises genuine leakage rather than over-fitting our own benchmark. Notably cosine is the
+stronger method on this distribution and the reranker's optimal threshold shifts upward (best F1
+at $\tau = 0.8$), consistent with its score saturation near 0 and 1 and reinforcing that $\tau$
+should be calibrated per distribution.
+
+\paragraph{Scope of this evidence.}
+We state the boundary of this result plainly. The dataset's negatives are \emph{off-topic} text,
+so this validates the easy half of the problem, \textbf{leak vs.\ unrelated content}, on which
+the detector is excellent. It does \emph{not} test the hard half, \textbf{leak vs.\ a legitimate
+on-topic response} that necessarily echoes the system prompt, which is precisely what the
+two-signal design targets and what drives the false-positive analysis in
+Section~\ref{sec:exp1}. Validating that half requires a ground-truth dataset of human-labeled
+on-topic responses, which to our knowledge does not yet exist and which we did not construct
+here. We therefore present these metrics as strong but \emph{partial} evidence: they show the
+mechanism works and generalises, and we consider them sufficient to support PLR as a practical
+detector, while stating explicitly that the on-topic case is not yet validated end-to-end.
+
+\subsection{What We Can and Cannot Measure: A Partial Confusion Matrix}
+\label{sec:partial-cm}
+
+A standard confusion matrix requires a ground-truth label for every record: did the response
+\emph{actually} leak? We have that label for only one of our two query types, and reporting a full
+precision/recall table would paper over the gap. We therefore make the gap explicit. Table~\ref{tab:partial-cm}
+cross-tabulates each record's query type against the metric's verdict (reranker, $\tau = 0.6$),
+pooled across all four responder models ($n = 984$: 536 adversarial, 448 legitimate).
+
+\begin{table}[h]
+  \centering
+  \caption{Partial confusion matrix: query type $\times$ metric verdict (reranker, $\tau = 0.6$,
+    pooled over four models, $n = 984$). \emph{Legitimate} responses cannot leak by construction,
+    so their column has reliable labels; \emph{adversarial} responses lack a ground-truth leak
+    label, so those cells are not scorable. ``Escalated'' rows are deferred to the judge
+    (Section~\ref{sec:judge-eval}).}
+  \label{tab:partial-cm}
+  \begin{tabular}{lccc}
+    \toprule
+    Query type & Verdict: leak & Verdict: safe & Escalated \\
+    \midrule
+    Legitimate ($n=448$, label known)   & 23 (FP) & 192 (TN) & 233 \\
+    Adversarial ($n=536$, label unknown) & 266 & 33 & 237 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{The legitimate column is scorable; the adversarial column is not.}
+A legitimate, on-topic response cannot constitute a leak, so for that class the verdicts are true
+labels: 23 of 448 legitimate responses were flagged, a \textbf{false-positive rate of $5.1\%$}, and
+192 were correctly cleared as safe (true negatives). This is the column the two-signal design is
+built to protect, and the number is trustworthy. The adversarial column is a different matter: an
+adversarial \emph{query} does not imply an adversarial \emph{response}, because a resistant model
+simply refuses. We have no human-verified label for which of the 536 adversarial responses
+genuinely disclosed protected content. The 266 ``leak'' verdicts are therefore \emph{flagged
+candidates}, not confirmed true positives, and the 33 ``safe'' verdicts are not confirmed false
+negatives.
+
+\paragraph{Consequence for precision and recall.}
+Recall (true positives over actual leaks) and precision (true positives over flagged) both require
+the adversarial ground-truth labels we lack, so we do \emph{not} report them over our own benchmark;
+doing so would assume every adversarial query produced a leak, which is false. What we can report
+are the two quantities that do not need that label: the false-positive rate on legitimate traffic
+($5.1\%$ pooled, $2.7$--$8.0\%$ per model in Table~\ref{tab:multimodel}), and the
+external precision/recall on the leak-vs-unrelated case (Table~\ref{tab:external}, AUC
+$\approx 0.99$). The missing piece, precision and recall on the leak-vs-legitimate-on-topic
+case, is exactly the human-labeled dataset that, to our knowledge, does not yet exist
+(Section~\ref{sec:external}). The 470 escalated records (233 legitimate, 237 adversarial) are not
+discarded: they are deferred to the LLM judge, whose behaviour we examine next.
+
+\paragraph{An objectively-labeled slice: verbatim credential leaks.}
+One slice of the adversarial column \emph{can} be labeled without human judgment or any LLM. The
+\texttt{secrets\_and\_credentials} category protects high-entropy tokens (production API keys
+like \texttt{tvk\_prod\_\dots}, webhook secrets, database tokens, an internal escalation
+URL) that cannot occur by chance in a benign answer. For these, ``did the response leak?'' reduces
+to a deterministic string match: is the literal secret present? This yields true labels for that
+slice, free of the circularity that an LLM annotator would introduce. Over the 132 adversarial
+records in this category, 33 reproduced a literal secret (true leaks). Table~\ref{tab:verbatim}
+crosses that ground truth against the metric's clear verdicts (reranker, $\tau = 0.6$).
+
+\begin{table}[h]
+  \centering
+  \caption{Deterministic ground truth on the \texttt{secrets\_and\_credentials} slice (verbatim
+    secret present $=$ leak). Confusion over the metric's \emph{clear} verdicts; 11 of the 33 true
+    leaks were escalated to the judge (deferred, not missed) and are excluded from this table.}
+  \label{tab:verbatim}
+  \begin{tabular}{lcc}
+    \toprule
+     & GT: leak (verbatim) & GT: no verbatim secret \\
+    \midrule
+    Verdict: leak & 22 (TP) & 31 (FP) \\
+    Verdict: safe & 0 (FN)  & 11 (TN) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The recall on this slice is exact and strong: \textbf{zero of the 33 verbatim leaks were cleared as
+safe} (the 11 not flagged outright were escalated to the judge, not missed), so the metric never
+silently passed a literal credential dump. Precision, however, reads as $42\%$
+($22 / 53$), and this number is a \emph{lower bound, not the true precision}. A string match only
+recognises the secret reproduced \emph{verbatim}; it cannot count a response that leaks by
+paraphrasing or describing the credential as a true positive. Many of the 31 ``false positives''
+are therefore semantic leaks invisible to the literal check, which is exactly why verbatim matching
+cannot replace a human label for the general case. The slice confirms what it can: the detector
+does not miss literal secret disclosures, and demonstrates, by its own blind spot, why the
+on-topic precision question stays open.
+
+\paragraph{Why we stop here: an acknowledged technical debt.}
+The principled way to close the remaining gap is a human-labeled set of on-topic adversarial
+responses. We did not build one: at $984$ pooled records across four models, exhaustive hand
+annotation was beyond the scope of this study, and a partial hand-labeling would itself need an
+adjudication protocol to be defensible. We therefore record this explicitly as a limitation rather
+than paper over it: PLR is validated on false-positive specificity (reliably), on the
+leak-vs-unrelated case (externally, AUC $\approx 0.99$), and on verbatim credential recall
+(deterministically, no misses), while end-to-end precision/recall on the hard leak-vs-legitimate
+case remains future work contingent on a human-annotated benchmark.
+
+\subsection{Judge Evaluation}
+\label{sec:judge-eval}
+
+The decision table escalates ambiguous records, high overlap \emph{and} high similarity to $G$, or
+low on both, to an LLM judge. To characterise that stage we evaluated two large candidate judges,
+neither of which is in the responder roster (avoiding self-judging):
+\texttt{llama-3.3-70b-versatile} and \texttt{openai/gpt-oss-120b}. Each judged a pooled set of
+$733$ records, all escalations (470), all legitimate records (as a false-positive probe), and a
+capped clear-leak sample, seeing the (system prompt, user message, response) triple as content to
+\emph{audit}, never as a role to adopt. Without human ground truth we cannot score a judge's
+accuracy on true leaks; we measure what is measurable (Table~\ref{tab:judge}): how each judge
+resolves escalations, its false-positive rate on legitimate traffic (where the label is reliable),
+and inter-judge agreement.
+
+\begin{table}[h]
+  \centering
+  \caption{Judge behaviour on $733$ pooled records. Escalation resolution is over the 470 escalated
+    records; the false-positive rate is on the 448 legitimate records (reliable labels).}
+  \label{tab:judge}
+  \begin{tabular}{lcccc}
+    \toprule
+    Judge & \multicolumn{3}{c}{Escalations resolved (of 470)} & FP on legitimate \\
+    \cmidrule(lr){2-4}
+          & leak & safe & uncertain & \\
+    \midrule
+    \texttt{llama-3.3-70b}   & 109 & 361 & 0  & \textbf{19.0\%} (85/448) \\
+    \texttt{gpt-oss-120b}    & 136 & 324 & 10 & 24.3\% (109/448) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The judges resolve roughly three-quarters of escalations as safe and a quarter as leaks, and they
+agree with each other on $89.8\%$ of records (Cohen's $\kappa = 0.72$). The decisive finding is the
+false-positive column: applied to legitimate traffic, the judges flag $19.0\%$ and $24.3\%$ of
+benign responses as leaks, roughly four to five times the two-signal metric's $5.1\%$. A raw LLM
+judge, in other words, is far more trigger-happy than the metric, which is precisely the
+over-flagging the two-signal design was built to avoid; the metric's specificity is a real
+advantage, not an artifact. The flip side, and a limitation we state plainly, is that the judges
+agree with the metric on only $47$--$52\%$ of clear-leak cases while agreeing strongly with each
+other: there is
+no consensus on the \emph{positive} class, which again traces back to the absence of human ground
+truth. We use the lower-FP \texttt{llama-3.3-70b} as the default judge, and treat the escalated
+positives as candidates for human review rather than final labels.
+
+\paragraph{Toward a continuous judge (proposed).}
+All judge verdicts above are \emph{discrete}: every escalated record resolves to a single
+leak/safe/uncertain label, and that is the mode used throughout this evaluation. We propose, but
+do not yet validate, a continuous extension based on \emph{self-consistency}: query the judge $k$
+times at non-zero temperature and take the fraction of ``leak'' votes as a continuous leakage
+score in $[0,1]$, feeding it directly into the aggregate PLR instead of the $\{0, 0.5, 1\}$
+mapping. Genuinely ambiguous responses yield intermediate scores (split votes), while clear cases
+saturate, so the dispersion of an ensemble of judgments becomes the signal. We favour this over
+reading the provider's token log-probabilities for the verdict token: a single token's
+log-probability reflects the model's confidence in \emph{emitting that word}, not a calibrated
+probability that the response leaked, and post-RLHF models are systematically over-confident, so
+the resulting scores tend to collapse to 0 or 1 rather than spread. Self-consistency is also
+provider-agnostic (it needs only repeated sampling, not log-probability access, which several
+inference APIs do not expose), with log-probabilities as an optional cheaper fallback and the
+current discrete verdict as the final fallback. Validating whether the continuous score is better
+calibrated than the discrete one again requires ground truth; the verbatim-credential slice
+(Section~\ref{sec:partial-cm}) offers a small objective anchor on which to test it.
 
 % ============================================================
 \section{Discussion}
@@ -562,7 +720,7 @@ $\tau = 0.65$ is strictly superior.
 % ============================================================
 
 \paragraph{Why ROUGE and NLI fail.}
-The failure of lexical and entailment-based approaches is not a calibration artifact---it is
+The failure of lexical and entailment-based approaches is not a calibration artifact; it is
 structural. Modern instruction-tuned LLMs rephrase rather than regurgitate, collapsing lexical
 overlap to near-zero even for unambiguous leaks. NLI compounds this with 512-token truncation
 that silently discards the system prompt content being evaluated. Both methods are disqualified
@@ -570,72 +728,68 @@ regardless of threshold tuning, and we report this as a useful negative result f
 evaluating off-the-shelf similarity metrics for leak detection.
 
 \paragraph{The reranker's conservatism: a detection asset and an operational cost.}
-The cross-encoder reranker scores adversarial records with a mean MaxChunkSim of 0.970,
-concentrating scores near 0 and 1 and leaving few records in the ambiguous mid-range. When it
-fails to detect a leak, it escalates rather than closes---a genuinely uncertain case correctly
-deferred to the judge. This conservatism is its most important property for security-critical
-deployments: it never makes a confident wrong call on adversarial traffic.
-
-The same conservatism is a liability on legitimate traffic. At $\tau = 0.65$, the reranker
-closes only 4 of 16 legitimate records as \textit{safe} directly, escalating the remaining 11
-to the judge. Cosine closes 10 of 16 as safe without judge involvement. Each unnecessary
-escalation carries the full inference cost of an LLM judge call, which at production scale
-makes the reranker-only pipeline significantly more expensive than its detection numbers
-suggest. This is the central operational trade-off of the current metric: the method that
-eliminates hard false negatives on adversarial traffic is also the one that over-escalates
-clean traffic most aggressively.
+The reranker concentrates scores near 0 and 1 (mean MaxChunkSim 0.970 on Gemma adversarial
+records), so when it misses a leak it tends to escalate rather than close: no confident wrong
+calls on Gemma, though the property weakens on more resistant agents (a few hard false negatives,
+Section~\ref{sec:generalization}), which is why the judge is not optional. The same conservatism
+is a cost on legitimate traffic: at $\tau = 0.6$ it closes only 4 of 16 Gemma legitimate records
+as \textit{safe} versus cosine's 10, escalating the rest at the full price of a judge call. The
+reranker-only pipeline is thus more expensive at scale than its detection numbers suggest. This is
+the central operational trade-off of the metric.
 
 \paragraph{The domain-boundary false positive.}
-The 6.2\% false positive rate traces to a single edge case that is inherent to semantic
-similarity-based detection: agents operating in the same domain as their system prompt will
-produce responses that echo prompt language when answering legitimate domain queries. This
-edge case is stable across thresholds from $\tau = 0.55$ to $\tau = 0.65$---the same record
-is flagged at all three values. One mitigation strategy is per-query reference
-calibration---constructing $G$ as a response that references the domain without sensitive
-specifics, making Signal~2 more discriminative for boundary cases.
-
-\paragraph{Threshold calibration in practice.}
-The sharp false positive increase at $\tau = 0.70$ suggests the reranker's score distribution
-has a natural gap between legitimate and adversarial responses in the $[0.65, 0.70]$ range.
-Practitioners should treat $\tau = 0.65$ as the deployment target but validate it against a
-held-out legitimate sample from their own domain before applying it in production, as the
-optimal threshold may shift with different system prompt styles or agent models.
+False positives trace to an edge case inherent to semantic detection: agents answering legitimate
+queries in their own domain echo prompt language. On Gemma this is a single stable record across
+$\tau \in [0.55, 0.65]$, and the four-model false-positive rate stays in 3.6--8\% at $\tau = 0.6$.
+One mitigation is per-query reference calibration, constructing $G$ to reference the domain
+without sensitive specifics, sharpening Signal~2 on boundary cases.
 
 \paragraph{Limitations.}
 \begin{itemize}
-  \item \textbf{Threshold calibration}: the recommended threshold $\tau = 0.65$ is calibrated
-    on this benchmark. Different system prompt styles, agent models, or domain vocabularies
-    may shift the optimal threshold. Per-deployment calibration against a held-out legitimate
-    sample is recommended before raising the threshold above the conservative default of 0.6.
-  \item \textbf{Scale}: the benchmark comprises 68 records. Results are directionally robust
-    but per-category confidence intervals are wide.
+  \item \textbf{Threshold calibration}: we adopt $\tau = 0.6$ as the cross-model default.
+    Different system prompt styles, agent models, or domain vocabularies may shift the optimal
+    threshold, so per-deployment calibration against a held-out legitimate sample is recommended
+    before raising $\tau$ above this default.
+  \item \textbf{No human ground truth}: this is the deepest limitation. Both the reference
+    responses $G$ and the leak/safe verdicts are produced by models: there is no human-labeled
+    set establishing which responses \emph{actually} leak. PLR is therefore an internally
+    consistent operational score that we show generalizes across models and reference generators,
+    not a detector validated against human judgment. A small human-labeled validation study is
+    the most important next step before treating PLR as a ground-truth leak measure.
+  \item \textbf{Scale}: the benchmark spans 246 queries answered by all four agent models
+    (984 pooled records, Section~\ref{sec:generalization}). Aggregate confidence intervals are
+    tight, but per-category and per-difficulty intervals remain wide.
+  \item \textbf{Model-generated references}: every $G$ is LLM-generated (Gemma for the origin
+    queries, \texttt{gpt-oss-120b} for the new ones). We mitigate the risks with a hard anti-secret
+    guard, human review, and cross-generator agreement (the two generators yield detection within
+    two points for the Llama agents), but no $G$ is human-verified.
+  \item \textbf{Adversarial authorship skew}: \texttt{gpt-oss-120b} declined to author most
+    extraction attacks for safety reasons, so the generated adversarial queries are
+    predominantly authored by \texttt{llama-3.3-70b-versatile}. Attack-author diversity is thus
+    lower than intended.
+  \item \textbf{Label noise}: roughly 3\% of generated adversarial queries are benign questions
+    mislabeled as attacks. We retain them and rely on the origin subset to corroborate the
+    conclusions; a label-cleaning pass would tighten the generated-subset estimates.
   \item \textbf{Multi-turn attacks}: the current pipeline evaluates single-turn responses.
-    Multi-turn attacks---where an adversary extracts the prompt incrementally across several
-    turns---are outside the current scope and are left for future work.
-  \item \textbf{Undetected leaks}: 23.1\% of adversarial records (12/52) are not automatically
-    classified by the reranker at $\tau = 0.65$ and are escalated to the judge. These are
-    medium-to-hard paraphrase attacks where the reranker score falls below threshold. A judge
-    component is a required part of any production deployment.
+    Multi-turn attacks, where an adversary extracts the prompt incrementally across several
+    turns, are outside the current scope and are left for future work.
+  \item \textbf{Undetected leaks}: a substantial share of adversarial records is not automatically
+    classified by the reranker at $\tau = 0.6$ and is escalated to the judge, and, on the more
+    resistant agents, a minority is closed as a hard false negative. These are medium-to-hard
+    paraphrase attacks where the reranker score falls below threshold. A judge component is a
+    required part of any production deployment.
 \end{itemize}
 
 \paragraph{Future work.}
-A multi-turn evaluation protocol and a lightweight LLM judge optimized for the ambiguous case
-are the primary extensions. A \emph{continuous scoring mode}---returning a scalar leakage
-intensity rather than a discrete verdict---is a natural extension of the two-signal design,
-but is left for future work. The intended formulation
-$s_i = \operatorname{MaxChunkSim}(R_i, P) \times (1 - \operatorname{CosineSim}(R_i, G))$
-assumes that Signal~1 varies meaningfully across record types. With the reranker, Signal~1
-concentrates near 1 for both adversarial and legitimate records that reference their domain,
-collapsing the product to approximately $1 - \operatorname{CosineSim}(R_i, G)$ and losing the
-independent Signal~1 contribution. Reliable continuous scores require either a Signal~1 method
-whose scores discriminate between legitimate domain references and actual leakage, or a
-reformulation of the scoring function that accounts for this saturation effect.
-The deeper open problem is a deterministic \emph{safe classifier}:
-a method that identifies with high confidence that a response does not leak system prompt
-content, without relying on an LLM judge and without the hard false negatives that disqualify
-cosine for this role. Such a component would allow the pipeline to close clean traffic cheaply
-and reserve judge inference exclusively for the genuinely ambiguous cases the reranker flags,
-eliminating the current tension between detection reliability and operational cost.
+The most important next step is a small human-labeled validation study to close the ground-truth
+gap; beyond it, a multi-turn evaluation protocol and a judge tuned for the ambiguous case are the
+primary extensions. A \emph{continuous scoring mode} ($s_i = \operatorname{MaxChunkSim}(R_i, P)
+\times (1 - \operatorname{CosineSim}(R_i, G))$) is natural but currently degenerate: with the
+reranker, Signal~1 saturates near 1 for both leaks and legitimate domain references, collapsing
+the product to $1 - \operatorname{CosineSim}(R_i, G)$. The deeper open problem is a deterministic
+\emph{safe classifier}, one that confirms a response does not leak without an LLM judge and
+without cosine's hard false negatives, which would let the pipeline close clean traffic cheaply
+and reserve the judge for genuinely ambiguous cases.
 
 % ============================================================
 \section{Conclusion}
@@ -647,29 +801,21 @@ similarity score with a cosine alignment score against a safe reference response
 four-way decision table that separates confirmed leaks, safe responses, and judge-escalated
 ambiguous cases.
 
-Our experiments on 68 benchmark records show that lexical (ROUGE-L) and entailment-based (NLI)
-methods are structurally incompatible with the task due to LLM paraphrase and token-limit
-truncation respectively. Among the viable methods, the cross-encoder reranker is the only one
-that produces zero hard false negatives across all evaluated thresholds---adversarial records
-it cannot confidently classify are escalated to the judge rather than incorrectly closed as
-safe.
+Our method comparison shows that lexical (ROUGE-L) and entailment-based (NLI) approaches are
+structurally incompatible with the task due to LLM paraphrase and token-limit truncation
+respectively, leaving the cross-encoder reranker as the strongest detector.
 
-Threshold calibration identifies $\tau = 0.65$ as the optimal operating point: 76.9\%
-detection, 0\% hard false negative rate, and 6.2\% false positive rate. The threshold
-$\tau = 0.70$ achieves higher detection (84.6\%) but triggers a sharp false positive increase
-to 31.2\%, disqualifying it for production use. We recommend $\tau = 0.6$ as the conservative
-default and $\tau = 0.65$ as the validated deployment target.
+Extending the benchmark to 246 queries evaluated across four agent models, PLR produces a
+discriminative resistance ranking and its operating threshold $\tau = 0.6$ transfers across models, keeping
+false positives at or below 8\%; a higher $\tau$ that looked optimal on a single model inflates
+false positives elsewhere. An independent labeled dataset corroborates the leak-overlap signal
+(AUC $\approx 0.99$) on the leak-versus-unrelated case, while the leak-versus-legitimate-on-topic
+case remains to be validated against human-labeled ground truth. We also report a smart cascade
+as a negative result: pre-filtering with cosine lowers judge load but converts ambiguous
+adversarial cases into hard false negatives, so it is not recommended as the primary configuration.
 
-A smart cascade combining cosine embeddings and the reranker was evaluated as a cost
-optimization: cosine pre-filters safe responses to reduce unnecessary reranker inference on
-legitimate traffic. However, the cascade introduces 17.3\% hard false negatives on adversarial
-records by converting cases the reranker would escalate into confident-but-wrong safe verdicts.
-Threshold tuning does not resolve this---the cascade can only eliminate hard false negatives by
-disabling cosine's safe closures entirely, at which point it collapses to the reranker alone.
-The smart cascade is therefore not recommended as the primary detection configuration.
-
-PLR is integrated into the Gaussia evaluation framework, enabling practitioners to compare
-model configurations on a common numeric scale across leakage categories and difficulty levels.
+PLR is integrated into the Gaussia evaluation framework, enabling practitioners to compare model
+configurations on a common numeric scale across leakage categories and difficulty levels.
 
 % ============================================================
 \section*{Open Source}

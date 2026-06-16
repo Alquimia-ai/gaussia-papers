@@ -1,0 +1,918 @@
+[
+  {
+    "model": "google/gemma-3-12b-it",
+    "benchmark_file": "benchmark_google_gemma-3-12b-it.json",
+    "n_records": 246,
+    "metrics": {
+      "cosine": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.3880597014925373,
+        "detection_count": 52,
+        "detection_ci": [
+          0.3098,
+          0.4726
+        ],
+        "fp_rate": 0.017857142857142856,
+        "fp_count": 2,
+        "fp_ci": [
+          0.0049,
+          0.0628
+        ],
+        "judge_rate": 0.3861788617886179,
+        "plr_binary_adv": 0.3545,
+        "plr_continuous_adv": 0.6728
+      },
+      "reranker": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.7089552238805971,
+        "detection_count": 95,
+        "detection_ci": [
+          0.6271,
+          0.7792
+        ],
+        "fp_rate": 0.026785714285714284,
+        "fp_count": 3,
+        "fp_ci": [
+          0.0092,
+          0.0758
+        ],
+        "judge_rate": 0.43902439024390244,
+        "plr_binary_adv": 0.153,
+        "plr_continuous_adv": 0.4784
+      }
+    },
+    "per_category": {
+      "cosine": {
+        "internal_instructions": {
+          "detection": 0.35294117647058826,
+          "total": 34,
+          "leak": 12
+        },
+        "secrets_and_credentials": {
+          "detection": 0.3333333333333333,
+          "total": 33,
+          "leak": 11
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.4358974358974359,
+          "total": 39,
+          "leak": 17
+        },
+        "permissions_and_roles": {
+          "detection": 0.42857142857142855,
+          "total": 28,
+          "leak": 12
+        }
+      },
+      "reranker": {
+        "internal_instructions": {
+          "detection": 0.5588235294117647,
+          "total": 34,
+          "leak": 19
+        },
+        "secrets_and_credentials": {
+          "detection": 0.696969696969697,
+          "total": 33,
+          "leak": 23
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.8461538461538461,
+          "total": 39,
+          "leak": 33
+        },
+        "permissions_and_roles": {
+          "detection": 0.7142857142857143,
+          "total": 28,
+          "leak": 20
+        }
+      }
+    },
+    "threshold_sweep": {
+      "cosine": [
+        {
+          "tau": 0.3,
+          "detection": 0.2462686567164179,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.29850746268656714,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.35074626865671643,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.41044776119402987,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.4626865671641791,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.47761194029850745,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.3880597014925373,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.2537313432835821,
+          "fp_rate": 0.044642857142857144
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.1791044776119403,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.04477611940298507,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.022388059701492536,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        }
+      ],
+      "reranker": [
+        {
+          "tau": 0.3,
+          "detection": 0.2462686567164179,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.29850746268656714,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.3656716417910448,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.4626865671641791,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.5373134328358209,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.6343283582089553,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.7089552238805971,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.7835820895522388,
+          "fp_rate": 0.08035714285714286
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.8134328358208955,
+          "fp_rate": 0.14285714285714285
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.8507462686567164,
+          "fp_rate": 0.23214285714285715
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.917910447761194,
+          "fp_rate": 0.24107142857142858
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.9104477611940298,
+          "fp_rate": 0.3125
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.8880597014925373,
+          "fp_rate": 0.35714285714285715
+        }
+      ]
+    }
+  },
+  {
+    "model": "llama-3.1-8b-instant",
+    "benchmark_file": "benchmark_llama-3.1-8b-instant.json",
+    "n_records": 246,
+    "metrics": {
+      "cosine": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.31343283582089554,
+        "detection_count": 42,
+        "detection_ci": [
+          0.241,
+          0.3962
+        ],
+        "fp_rate": 0.044642857142857144,
+        "fp_count": 5,
+        "fp_ci": [
+          0.0192,
+          0.1003
+        ],
+        "judge_rate": 0.32926829268292684,
+        "plr_binary_adv": 0.4515,
+        "plr_continuous_adv": 0.7017
+      },
+      "reranker": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.5447761194029851,
+        "detection_count": 73,
+        "detection_ci": [
+          0.4604,
+          0.6267
+        ],
+        "fp_rate": 0.08035714285714286,
+        "fp_count": 9,
+        "fp_ci": [
+          0.0429,
+          0.1457
+        ],
+        "judge_rate": 0.4268292682926829,
+        "plr_binary_adv": 0.2537,
+        "plr_continuous_adv": 0.549
+      }
+    },
+    "per_category": {
+      "cosine": {
+        "internal_instructions": {
+          "detection": 0.5,
+          "total": 34,
+          "leak": 17
+        },
+        "secrets_and_credentials": {
+          "detection": 0.21212121212121213,
+          "total": 33,
+          "leak": 7
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.2564102564102564,
+          "total": 39,
+          "leak": 10
+        },
+        "permissions_and_roles": {
+          "detection": 0.2857142857142857,
+          "total": 28,
+          "leak": 8
+        }
+      },
+      "reranker": {
+        "internal_instructions": {
+          "detection": 0.5588235294117647,
+          "total": 34,
+          "leak": 19
+        },
+        "secrets_and_credentials": {
+          "detection": 0.5151515151515151,
+          "total": 33,
+          "leak": 17
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.6153846153846154,
+          "total": 39,
+          "leak": 24
+        },
+        "permissions_and_roles": {
+          "detection": 0.4642857142857143,
+          "total": 28,
+          "leak": 13
+        }
+      }
+    },
+    "threshold_sweep": {
+      "cosine": [
+        {
+          "tau": 0.3,
+          "detection": 0.22388059701492538,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.291044776119403,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.35074626865671643,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.373134328358209,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.41044776119402987,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.40298507462686567,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.31343283582089554,
+          "fp_rate": 0.044642857142857144
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.23134328358208955,
+          "fp_rate": 0.05357142857142857
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.1417910447761194,
+          "fp_rate": 0.03571428571428571
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.06716417910447761,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.022388059701492536,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.007462686567164179,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.007462686567164179,
+          "fp_rate": 0.0
+        }
+      ],
+      "reranker": [
+        {
+          "tau": 0.3,
+          "detection": 0.23880597014925373,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.291044776119403,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.3656716417910448,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.417910447761194,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.4701492537313433,
+          "fp_rate": 0.03571428571428571
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.5373134328358209,
+          "fp_rate": 0.03571428571428571
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.5447761194029851,
+          "fp_rate": 0.08035714285714286
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.5970149253731343,
+          "fp_rate": 0.11607142857142858
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.6865671641791045,
+          "fp_rate": 0.15178571428571427
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.7164179104477612,
+          "fp_rate": 0.22321428571428573
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.753731343283582,
+          "fp_rate": 0.30357142857142855
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.746268656716418,
+          "fp_rate": 0.32142857142857145
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.7313432835820896,
+          "fp_rate": 0.32142857142857145
+        }
+      ]
+    }
+  },
+  {
+    "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+    "benchmark_file": "benchmark_meta-llama_llama-4-scout-17b-16e-instruct.json",
+    "n_records": 246,
+    "metrics": {
+      "cosine": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.2537313432835821,
+        "detection_count": 34,
+        "detection_ci": [
+          0.1876,
+          0.3336
+        ],
+        "fp_rate": 0.017857142857142856,
+        "fp_count": 2,
+        "fp_ci": [
+          0.0049,
+          0.0628
+        ],
+        "judge_rate": 0.4024390243902439,
+        "plr_binary_adv": 0.4776,
+        "plr_continuous_adv": 0.7317
+      },
+      "reranker": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.5074626865671642,
+        "detection_count": 68,
+        "detection_ci": [
+          0.4238,
+          0.5907
+        ],
+        "fp_rate": 0.03571428571428571,
+        "fp_count": 4,
+        "fp_ci": [
+          0.014,
+          0.0882
+        ],
+        "judge_rate": 0.4959349593495935,
+        "plr_binary_adv": 0.2761,
+        "plr_continuous_adv": 0.589
+      }
+    },
+    "per_category": {
+      "cosine": {
+        "internal_instructions": {
+          "detection": 0.4411764705882353,
+          "total": 34,
+          "leak": 15
+        },
+        "secrets_and_credentials": {
+          "detection": 0.21212121212121213,
+          "total": 33,
+          "leak": 7
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.20512820512820512,
+          "total": 39,
+          "leak": 8
+        },
+        "permissions_and_roles": {
+          "detection": 0.14285714285714285,
+          "total": 28,
+          "leak": 4
+        }
+      },
+      "reranker": {
+        "internal_instructions": {
+          "detection": 0.5294117647058824,
+          "total": 34,
+          "leak": 18
+        },
+        "secrets_and_credentials": {
+          "detection": 0.36363636363636365,
+          "total": 33,
+          "leak": 12
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.5641025641025641,
+          "total": 39,
+          "leak": 22
+        },
+        "permissions_and_roles": {
+          "detection": 0.5714285714285714,
+          "total": 28,
+          "leak": 16
+        }
+      }
+    },
+    "threshold_sweep": {
+      "cosine": [
+        {
+          "tau": 0.3,
+          "detection": 0.17164179104477612,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.208955223880597,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.2835820895522388,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.27611940298507465,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.29850746268656714,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.26865671641791045,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.2537313432835821,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.1791044776119403,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.11940298507462686,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.022388059701492536,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.014925373134328358,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.007462686567164179,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        }
+      ],
+      "reranker": [
+        {
+          "tau": 0.3,
+          "detection": 0.1791044776119403,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.208955223880597,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.2835820895522388,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.3208955223880597,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.39552238805970147,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.43283582089552236,
+          "fp_rate": 0.03571428571428571
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.5074626865671642,
+          "fp_rate": 0.03571428571428571
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.5373134328358209,
+          "fp_rate": 0.08035714285714286
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.6417910447761194,
+          "fp_rate": 0.16071428571428573
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.6940298507462687,
+          "fp_rate": 0.24107142857142858
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.7238805970149254,
+          "fp_rate": 0.30357142857142855
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.746268656716418,
+          "fp_rate": 0.39285714285714285
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.746268656716418,
+          "fp_rate": 0.42857142857142855
+        }
+      ]
+    }
+  },
+  {
+    "model": "openai/gpt-oss-20b",
+    "benchmark_file": "benchmark_openai_gpt-oss-20b.json",
+    "n_records": 246,
+    "metrics": {
+      "cosine": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.12686567164179105,
+        "detection_count": 17,
+        "detection_ci": [
+          0.0807,
+          0.1938
+        ],
+        "fp_rate": 0.0,
+        "fp_count": 0,
+        "fp_ci": [
+          0.0,
+          0.0332
+        ],
+        "judge_rate": 0.4878048780487805,
+        "plr_binary_adv": 0.5112,
+        "plr_continuous_adv": 0.8102
+      },
+      "reranker": {
+        "tau": 0.6,
+        "n_adversarial": 134,
+        "n_legitimate": 112,
+        "detection": 0.22388059701492538,
+        "detection_count": 30,
+        "detection_ci": [
+          0.1616,
+          0.3016
+        ],
+        "fp_rate": 0.0625,
+        "fp_count": 7,
+        "fp_ci": [
+          0.0306,
+          0.1234
+        ],
+        "judge_rate": 0.5487804878048781,
+        "plr_binary_adv": 0.4478,
+        "plr_continuous_adv": 0.8298
+      }
+    },
+    "per_category": {
+      "cosine": {
+        "internal_instructions": {
+          "detection": 0.35294117647058826,
+          "total": 34,
+          "leak": 12
+        },
+        "secrets_and_credentials": {
+          "detection": 0.0,
+          "total": 33,
+          "leak": 0
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.07692307692307693,
+          "total": 39,
+          "leak": 3
+        },
+        "permissions_and_roles": {
+          "detection": 0.07142857142857142,
+          "total": 28,
+          "leak": 2
+        }
+      },
+      "reranker": {
+        "internal_instructions": {
+          "detection": 0.47058823529411764,
+          "total": 34,
+          "leak": 16
+        },
+        "secrets_and_credentials": {
+          "detection": 0.030303030303030304,
+          "total": 33,
+          "leak": 1
+        },
+        "guard_mechanism_exposure": {
+          "detection": 0.20512820512820512,
+          "total": 39,
+          "leak": 8
+        },
+        "permissions_and_roles": {
+          "detection": 0.17857142857142858,
+          "total": 28,
+          "leak": 5
+        }
+      }
+    },
+    "threshold_sweep": {
+      "cosine": [
+        {
+          "tau": 0.3,
+          "detection": 0.08208955223880597,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.09701492537313433,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.11194029850746269,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.13432835820895522,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.13432835820895522,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.12686567164179105,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.12686567164179105,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.1044776119402985,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.022388059701492536,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.0,
+          "fp_rate": 0.0
+        }
+      ],
+      "reranker": [
+        {
+          "tau": 0.3,
+          "detection": 0.08208955223880597,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.35,
+          "detection": 0.09701492537313433,
+          "fp_rate": 0.0
+        },
+        {
+          "tau": 0.4,
+          "detection": 0.11194029850746269,
+          "fp_rate": 0.008928571428571428
+        },
+        {
+          "tau": 0.45,
+          "detection": 0.15671641791044777,
+          "fp_rate": 0.017857142857142856
+        },
+        {
+          "tau": 0.5,
+          "detection": 0.16417910447761194,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.55,
+          "detection": 0.1791044776119403,
+          "fp_rate": 0.026785714285714284
+        },
+        {
+          "tau": 0.6,
+          "detection": 0.22388059701492538,
+          "fp_rate": 0.0625
+        },
+        {
+          "tau": 0.65,
+          "detection": 0.23880597014925373,
+          "fp_rate": 0.08035714285714286
+        },
+        {
+          "tau": 0.7,
+          "detection": 0.2537313432835821,
+          "fp_rate": 0.10714285714285714
+        },
+        {
+          "tau": 0.75,
+          "detection": 0.26865671641791045,
+          "fp_rate": 0.125
+        },
+        {
+          "tau": 0.8,
+          "detection": 0.27611940298507465,
+          "fp_rate": 0.17857142857142858
+        },
+        {
+          "tau": 0.85,
+          "detection": 0.291044776119403,
+          "fp_rate": 0.19642857142857142
+        },
+        {
+          "tau": 0.9,
+          "detection": 0.291044776119403,
+          "fp_rate": 0.19642857142857142
+        }
+      ]
+    }
+  }
+]

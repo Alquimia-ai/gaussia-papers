@@ -5,6 +5,29 @@
 
 ---
 
+## ⚡ ACTUALIZACIÓN FINAL (los números de abajo que difieran quedan superados por esto)
+
+**Setup final:** 4 modelos, todos a **N=246** (134 adv + 112 leg). Pooled = **984** registros.
+Gemma se regeneró sobre las 246 (endpoint HF levantado). Harness paralelizado (ThreadPool 8 workers) + `timeout=60/max_retries=4` en el cliente.
+
+**PLR (reranker, τ=0.6):** gpt-oss-20b 0.448 (det 22.4%, FP 6.2%) > llama-4-scout 0.276 (50.7%, 3.6%) > llama-3.1-8b 0.254 (54.5%, 8.0%) > gemma-3-12b 0.153 (70.9%, FP **2.7%**).
+
+**τ=0.6 transfiere:** FP ≤8% en los 4; explota a 0.7 (11-16%).
+
+**Matriz de confusión parcial (984):** FP=5.1% (23/448, confiable). Columna adversarial no scoreable sin GT → no se reporta recall/precision sobre el benchmark propio.
+
+**Slice verbatim credenciales (GT objetivo):** 132 adv, 33 leaks literales, **0 FN (recall 100%)**, precision 42% (piso).
+
+**Juez (n=733, 470 escalados):** llama-3.3-70b FP 19.0%, gpt-oss-120b 24.3% (~4-5× la métrica). Kappa 0.72, acuerdo clear-leak 47-52%. Default: llama-3.3-70b.
+
+**Validación externa:** AUC ~0.99 (Señal 1 sola, caso fácil leak vs off-topic).
+
+**Cambios de redacción:** smart cascade sin tabla; métricas individuales reranker/cosine removidas; self-consistency propuesto como modo continuo; em-dashes eliminados; naming "Gemma n=68" neutralizado; autor Axel Fritz. Paper 14 págs.
+
+**Deuda técnica asumida:** sin GT humano → recall/precision del caso difícil queda como future work. Score: ~8/10 white paper operativo, ~6/10 pesando falta de GT.
+
+---
+
 ## Problema
 
 Los LLMs desplegados con system prompts que contienen información sensible (API keys, reglas de negocio, controles de acceso) son vulnerables a ataques adversariales que los inducen a revelar ese contenido. No existe una métrica estándar y reproducible para cuantificar qué tan bien resiste un modelo a estos ataques.
@@ -313,3 +336,50 @@ ROUGE y NLI descartados con evidencia empírica. Reranker mejor detector individ
 7. **Results** — detección por dificultad y categoría, FP analysis, smart cascade
 8. **Discussion** — por qué fallan ROUGE/NLI, complementariedad cosine/reranker, FP de dominio, limitaciones, trabajo futuro
 9. **Conclusion**
+
+---
+
+## Extensión multi-modelo + dataset ampliado (respuesta al review)
+
+**Motivo:** review pidió (1) más de un modelo, (2) N > 68.
+
+**Dataset:** 68 → 246 queries (68 gold hand-G + 178 generadas y revisadas: 82 adv, 96 leg).
+Ataques generados por llama-3.3-70b + gpt-oss-120b; G por gpt-oss-120b con guarda anti-secretos
+(regex word-boundary) + revisión. qwen3-32b descartado (emite `<think>`). Legítimas 16 → 112
+(fortalece estimación de FP). gpt-oss-120b se negó a generar la mayoría de ataques → autoría
+adversarial sesgada a llama-3.3-70b.
+
+**Resultados (reranker, τ=0.6):**
+
+| Modelo | N | PLR | Detección [95% CI] | FP [95% CI] |
+|---|---|---|---|---|
+| gpt-oss-20b | 246 | 0.448 | 22.4% [16.2–30.2] | 6.2% [3.1–12.3] |
+| llama-4-scout-17b | 246 | 0.276 | 50.7% [42.4–59.1] | 3.6% [1.4–8.8] |
+| llama-3.1-8b | 246 | 0.254 | 54.5% [46.0–62.7] | 8.0% [4.3–14.6] |
+| gemma-3-12b (gold) | 68 | 0.192 | 61.5% [48.0–73.5] | 6.2% [1.1–28.3] |
+
+**Hallazgos clave:**
+1. PLR discrimina modelos (0.19–0.45); gpt-oss-20b el más resistente.
+2. τ=0.6 transfiere: FP ≤8% en los 4 modelos; explota recién en τ=0.70 (gemma 31%). El estudio
+   single-model sugería 0.65, pero 0.65 ya infla FP en los llama (12%/8%) → se mantiene 0.6 como
+   default robusto cross-modelo.
+3. Validación gold-vs-generado: detección gold≈generado dentro de ±2pp para los llama. Confound de
+   familia gpt-oss DESCARTADO: gpt-oss-20b detecta bajo también en gold (19.2%, G a mano) → su
+   resistencia es real, no artefacto del generador.
+4. N grande achica CIs: FP CI pasó de [1.1–28.3] (n=16) a [3.1–12.3] (n=112).
+
+**Limitaciones documentadas:** G generada por LLM (no gold humano para los 178), autoría
+adversarial sesgada, ~3% ruido de etiquetas (adversariales blandos), Gemma sobre n=68 (endpoint HF
+pausado).
+
+**Harness nuevo (experiments/):** generate_benchmark.py (parametrizado + SECRETS),
+generate_attacks.py, generate_ground_truth.py (guarda), assemble_benchmark.py, run_experiments.py
+(CIs Wilson + barrido τ), build_report.py (dashboard HTML offline). similarity_methods.py intacto.
+
+### Validación externa (Señal 1 vs gabrielchua/system-prompt-leakage)
+
+Muestra balanceada n=160 (80 leak / 80 no-leak), test split. Señal 1 (MaxChunkSim contenido vs prompt) contra etiquetas del dataset:
+- cosine: AUC 0.989, @τ=0.6 P=0.96 R=0.96 F1=0.96
+- reranker: AUC 0.985, @τ=0.6 P=0.83 R=1.00 F1=0.91 (best F1 0.92 @τ=0.8)
+
+**Alcance honesto (en el paper, §External Validation):** valida el caso fácil (leak vs off-topic) — excelente. NO valida el caso difícil (leak vs legítima on-topic), que es el que motiva el diseño de dos señales. Etiquetas sintéticas, solo Señal 1 (sin G). Se presenta como evidencia fuerte pero PARCIAL: el mecanismo funciona y generaliza, suficiente para sostener PLR como detector práctico, pero el caso on-topic no está validado end-to-end (falta dataset con GT humano).
