@@ -1,0 +1,139 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% Typography: URW Palatino (Palladio) text + Pazo math + Inconsolata mono.
+% This is the same font stack used by the Qwen technical reports.
+\usepackage{mathpazo}
+\usepackage[scaled=0.95]{inconsolata}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+
+% Resolve assets/figures whether compiled from the repo root or this folder.
+% Copy this line into each paper, pointing the first path at the paper's folder.
+\graphicspath{{template/}{./}}
+
+% Brand header (logo + wordmark on the left, date on the right)
+\definecolor{gaussiadark}{HTML}{323030}
+\definecolor{gaussiaccent}{HTML}{C15A35}
+\newcommand{\paperdate}{\today}
+\newcommand{\papersurl}{https://www.gaussia.ai/papers}
+\newcommand{\repourl}{https://github.com/gaussia-labs/papers}
+\newcommand{\hfurl}{https://huggingface.co/gaussia-labs}
+% Header logo (no link, just branding)
+\newcommand{\gaussialogo}{%
+  \raisebox{-0.28\height}{\includegraphics[height=14pt]{logo}}%
+  \hspace{5pt}\textcolor{gaussiadark}{\textbf{\large Gaussia}}%
+}
+% Clickable links shown under the title, Qwen-report style
+\newcommand{\paperlinks}{%
+  \begin{center}
+    \href{\repourl}{%
+      \raisebox{-0.22\height}{\includegraphics[height=11pt]{github}}%
+      \hspace{4pt}\texttt{github.com/gaussia-labs/papers}}\\[4pt]
+    \href{\papersurl}{%
+      \raisebox{-0.26\height}{\includegraphics[height=11pt]{logo}}%
+      \hspace{4pt}\texttt{gaussia.ai/papers}}\\[4pt]
+    \href{\hfurl}{%
+      \raisebox{-0.26\height}{\includegraphics[height=12pt]{hf-logo}}%
+      \hspace{4pt}\texttt{huggingface.co/gaussia-labs}}
+  \end{center}%
+}
+
+\providecommand{\keywords}[1]{%
+  \vspace{0.5em}%
+  \noindent\textbf{Keywords: }#1%
+}
+
+\setlength{\headheight}{18pt}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\gaussialogo}
+\rhead{\textcolor{gaussiadark}{\paperdate}}
+\renewcommand{\headrulewidth}{0.6pt}
+\rfoot{\thepage}
+
+% Metadata
+\title{Your Paper Title Here}
+\author{
+  Author One \\
+  \texttt{author1@email.com}
+}
+% Date is shown in the header instead of under the title (see \paperdate above)
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+% Repository and website links, shown under the title
+\paperlinks
+
+% The abstract is REQUIRED for every Gaussia paper. Do not remove it.
+\begin{abstract}
+A concise summary of the paper: the problem addressed, the proposed approach,
+key results, and implications for the Gaussia framework.
+\end{abstract}
+
+\keywords{keyword one, keyword two, keyword three}
+
+\section{Introduction}
+
+Motivate the problem. Why does AI evaluation need this metric or approach?
+What gap does it fill in the current Gaussia framework?
+
+\section{Related Work}
+
+Discuss existing approaches and how your proposal differs or improves upon them.
+
+\section{Methodology}
+
+Describe your approach in detail. Include formal definitions and notation
+and mathematical formulations.
+
+\subsection{Formal Definition}
+
+% Example: define your metric formally
+% \begin{equation}
+%   M(x) = \frac{1}{N} \sum_{i=1}^{N} f(x_i)
+% \end{equation}
+
+% Rename this section as appropriate, e.g. Results, Experiments, Case Study.
+\section{Evaluation}
+
+If applicable, present experimental results: datasets used, baselines compared
+against, and analysis.
+
+% Example table
+% \begin{table}[h]
+%   \centering
+%   \caption{Experimental Results}
+%   \begin{tabular}{lcc}
+%     \toprule
+%     Method & Score & Runtime \\
+%     \midrule
+%     Baseline & 0.72 & 1.2s \\
+%     Ours & \textbf{0.89} & 0.8s \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+\section{Conclusion}
+
+Summarize contributions and outline future work.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
