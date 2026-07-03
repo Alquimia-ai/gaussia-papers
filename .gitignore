@@ -22,5 +22,5 @@ researches/
 *.blg
 
 *.env
-
+.DS_Store
 generate_benchmark.py
