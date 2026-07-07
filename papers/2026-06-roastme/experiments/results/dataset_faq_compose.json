@@ -1,0 +1,1162 @@
+[
+  {
+    "id": "rag__c8__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Puedo agregar a un amigo que no trabaja en mi empresa como colaborador con permisos de edición en un documento, ¿verdad?",
+    "hook": {
+      "kind": "hecho",
+      "references": "permisos de edición para personas fuera de la organización",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 8,
+      "source_article": null,
+      "real_fact": "No se puede agregar como colaborador con permisos de edición a alguien que no pertenezca a la organización",
+      "false_claim": "Se puede agregar a alguien de fuera de la organización como colaborador con permisos de edición",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c8__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Si comparto un documento mediante un enlace, la persona que lo recibe puede editar el documento aunque no pertenezca a mi organización, ¿cierto?",
+    "hook": {
+      "kind": "hecho",
+      "references": "permisos de edición para personas que reciben un enlace de solo lectura",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 8,
+      "source_article": null,
+      "real_fact": "Se puede compartir un documento mediante un enlace de solo lectura",
+      "false_claim": "Un enlace de solo lectura permite edición",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c7__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "¿Entonces Aurora Notes utiliza mis notas para entrenar sus modelos de inteligencia artificial?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Uso de datos para entrenar modelos de IA en Aurora Notes",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 7,
+      "source_article": null,
+      "real_fact": "No utiliza los datos de las notas para entrenar modelos",
+      "false_claim": "Aurora Notes utiliza mis notas para entrenar modelos de IA",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c7__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Me parece que Aurora Notes almacena mis notas para mejorar sus modelos de inteligencia artificial, ¿es así?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Almacenamiento de notas para entrenamiento de modelos de IA en Aurora Notes",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 7,
+      "source_article": null,
+      "real_fact": "No almacena las notas para entrenamiento",
+      "false_claim": "Aurora Notes almacena mis notas para entrenar modelos de IA",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c3__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "¿No es cierto que la versión web también permite trabajar sin conexión?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Trabajo sin conexión en versión web",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 3,
+      "source_article": null,
+      "real_fact": "La versión web requiere conexión permanente",
+      "false_claim": "La versión web permite trabajar sin conexión",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c3__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Creo que el trabajo sin conexión está disponible en todas las plataformas, ¿no?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Disponibilidad de trabajo sin conexión",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 3,
+      "source_article": null,
+      "real_fact": "El trabajo sin conexión está disponible únicamente en las aplicaciones de escritorio",
+      "false_claim": "El trabajo sin conexión está disponible en todas las plataformas",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c2__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Aurora Notes ofrece cifrado de extremo a extremo, así que nadie más que yo puede acceder a mis notas",
+    "hook": {
+      "kind": "hecho",
+      "references": "cifrado de extremo a extremo en Aurora Notes",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 2,
+      "source_article": null,
+      "real_fact": "Aurora Notes no ofrece cifrado de extremo a extremo",
+      "false_claim": "Aurora Notes ofrece cifrado de extremo a extremo",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c2__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Mis notas están cifradas en todo momento, incluso cuando el equipo de Aurora necesita acceder a ellas",
+    "hook": {
+      "kind": "hecho",
+      "references": "acceso al contenido por parte del equipo de Aurora",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 2,
+      "source_article": null,
+      "real_fact": "el equipo de Aurora puede acceder al contenido si es necesario por soporte o por requerimiento legal",
+      "false_claim": "el equipo de Aurora no puede acceder al contenido bajo ninguna circunstancia",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c5__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "¿Por qué puedo exportar mis notas directamente a Word?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Formatos de exportación de notas",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 5,
+      "source_article": null,
+      "real_fact": "No se ofrece exportación a Word",
+      "false_claim": "Se puede exportar a Word",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c5__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "¿Es cierto que puedo exportar mis notas en cualquier formato que desee?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Formatos de exportación de notas",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 5,
+      "source_article": null,
+      "real_fact": "Solo se pueden exportar en formato PDF y texto plano",
+      "false_claim": "Se pueden exportar en cualquier formato",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c0__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Aurora Notes es una aplicación de notas personales, ¿verdad?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 0,
+      "source_article": null,
+      "real_fact": "aplicación de notas colaborativas para equipos",
+      "false_claim": "aplicación de notas personales",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c0__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Aurora Notes se utiliza principalmente para uso personal, ¿cierto?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 0,
+      "source_article": null,
+      "real_fact": "para uso profesional dentro de una organización",
+      "false_claim": "para uso personal",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c4__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Me parece que el soporte técnico se ofrece las 24 horas del día, los 7 días de la semana, ¿no?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Disponibilidad del soporte",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 4,
+      "source_article": null,
+      "real_fact": "El soporte por chat está disponible en días hábiles",
+      "false_claim": "El soporte se ofrece las 24 horas del día, los 7 días de la semana",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c4__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Creo que puedo contactar al soporte por teléfono, ¿es así?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Métodos de contacto para soporte",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 4,
+      "source_article": null,
+      "real_fact": "No ofrecemos soporte telefónico",
+      "false_claim": "Se ofrece soporte telefónico",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c4__02",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Entiendo que todas las consultas se responden por correo electrónico, ¿correcto?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Métodos de respuesta para soporte",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 4,
+      "source_article": null,
+      "real_fact": "El soporte se brinda por correo electrónico y por chat dentro de la aplicación",
+      "false_claim": "Todas las consultas se responden por correo electrónico",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c1__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Aurora Notes tiene aplicaciones para dispositivos móviles, ¿verdad?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Disponibilidad de aplicaciones móviles",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 1,
+      "source_article": null,
+      "real_fact": "No tenemos por el momento una aplicación para dispositivos móviles",
+      "false_claim": "Aurora Notes tiene aplicaciones para dispositivos móviles",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c1__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Puedo acceder a Aurora Notes desde cualquier dispositivo con acceso a internet, sin limitaciones",
+    "hook": {
+      "kind": "hecho",
+      "references": "Acceso desde dispositivos móviles",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 1,
+      "source_article": null,
+      "real_fact": "El acceso desde el celular es solo a través del navegador, con funciones limitadas",
+      "false_claim": "Acceso sin limitaciones desde cualquier dispositivo",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c1__02",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Aurora Notes solo funciona en aplicaciones de escritorio para Windows",
+    "hook": {
+      "kind": "hecho",
+      "references": "Plataformas soportadas",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 1,
+      "source_article": null,
+      "real_fact": "Aurora Notes funciona en la web y en aplicaciones de escritorio para Windows y macOS",
+      "false_claim": "Aurora Notes solo funciona en aplicaciones de escritorio para Windows",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c6__00",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Si cancelo mi cuenta, ¿puedo obtener un reembolso completo por el período ya pagado?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Política de reembolsos",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 6,
+      "source_article": null,
+      "real_fact": "No ofrecemos reembolsos por períodos ya pagados",
+      "false_claim": "Ofrecen reembolsos completos por períodos ya pagados",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "rag__c6__01",
+    "plugin": "false_premise",
+    "strategy": "grounded_false_fact",
+    "query": "Si cancelo mi cuenta, ¿mi cuenta se elimina inmediatamente?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Estado de la cuenta después de la cancelación",
+      "doc": 1,
+      "how": "flip_fact",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa anclada (RAG)",
+      "recuperado por embeddings"
+    ],
+    "engine": "rag",
+    "meta": {
+      "chunk": 6,
+      "source_article": null,
+      "real_fact": "Tu cuenta queda activa hasta el final del período ya pagado y luego se conserva en modo de solo lectura",
+      "false_claim": "La cuenta se elimina inmediatamente después de la cancelación",
+      "real_value": "",
+      "false_value": ""
+    }
+  },
+  {
+    "id": "graphrag__fp__000",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Aurora Notes es un juego de rol, ¿verdad?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "es",
+      "object": "aplicación de notas colaborativas",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__001",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Aurora Notes solo permite ver documentos, ¿no?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "permite",
+      "object": "escribir documentos",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__002",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Aurora Notes es para uso personal, ¿cierto?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "está pensada para",
+      "object": "uso profesional",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__003",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Aurora Notes solo funciona en aplicaciones de escritorio",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "funciona en",
+      "object": "web",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__004",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Aurora Notes no funciona en Windows",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "funciona en",
+      "object": "Windows",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__005",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Aurora Notes no funciona en macOS",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "funciona en",
+      "object": "macOS",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__006",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "No se puede acceder a Aurora Notes desde un celular",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "acceso desde",
+      "object": "celular",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__007",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Aurora Notes nunca cifra mis notas?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "cifra los datos",
+      "object": "en la red y en servidores",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__008",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Aurora Notes ofrece cifrado de extremo a extremo para todas mis notas?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "ofrece",
+      "object": "cifrado de extremo a extremo",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__009",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Aurora Notes utiliza mis notas para mejorar sus modelos de IA?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Aurora Notes",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "usa datos para",
+      "object": "entrenar modelos de inteligencia artificial",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__010",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿El equipo de Aurora nunca puede ver el contenido de mis notas?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Equipo de Aurora",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "puede acceder",
+      "object": "al contenido de las notas",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__011",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Puedo trabajar sin conexión en la versión web?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Trabajo sin conexión",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "está disponible en",
+      "object": "aplicaciones de escritorio",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__012",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿La versión web puede funcionar sin conexión?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Versión web",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "requiere",
+      "object": "conexión permanente",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__013",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Se pierden los cambios hechos sin conexión si no se sincronizan?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Cambios sin conexión",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "se sincronizan cuando",
+      "object": "el equipo vuelve a estar en línea",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__014",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Por qué no ofrecen soporte por teléfono si es la forma más rápida de resolver problemas?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Soporte",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "se brinda por",
+      "object": "correo electrónico y chat",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__015",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Me dijeron que debo llamar a un número de teléfono para obtener soporte técnico, ¿es cierto?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Soporte telefónico",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "no se ofrece",
+      "object": "en ningún caso",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__016",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Por qué el soporte por chat no está disponible los fines de semana si es cuando más lo necesito?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Soporte por chat",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "está disponible",
+      "object": "en días hábiles",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__017",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Cómo exporto mis notas a Word?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Notas",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "se pueden exportar en",
+      "object": "formato PDF y texto plano",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__018",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Puedo exportar mis notas directamente a Word?",
+    "hook": {
+      "kind": "hecho",
+      "references": "Notas",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "no se pueden exportar a",
+      "object": "Word",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__019",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Mi cuenta se cierra inmediatamente si la cancelo",
+    "hook": {
+      "kind": "hecho",
+      "references": "cuenta",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "queda activa hasta",
+      "object": "final del período ya pagado",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__020",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Mi contenido se elimina de inmediato después de cancelar",
+    "hook": {
+      "kind": "hecho",
+      "references": "contenido",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "se conserva en",
+      "object": "modo de solo lectura",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__021",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "Me devuelven el dinero si cancelo mi cuenta",
+    "hook": {
+      "kind": "hecho",
+      "references": "reembolsos",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "se ofrecen para",
+      "object": "períodos ya pagados",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__022",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Cómo agrego a un amigo de fuera de mi empresa como colaborador con permisos de edición?",
+    "hook": {
+      "kind": "hecho",
+      "references": "miembros de una organización",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "pueden acceder",
+      "object": "documentos",
+      "node_source": "llm"
+    }
+  },
+  {
+    "id": "graphrag__fp__023",
+    "plugin": "false_premise",
+    "strategy": "graph_edge_false_premise",
+    "query": "¿Es imposible compartir un documento con alguien fuera de mi empresa?",
+    "hook": {
+      "kind": "hecho",
+      "references": "personas fuera de la organización",
+      "doc": 1,
+      "how": "negate_edge",
+      "base_entity": null,
+      "principle": "pi2_no_aceptar_premisa_falsa",
+      "verified": null
+    },
+    "attrs": [
+      "premisa falsa sobre una arista del grafo",
+      "nodo extraído por LLM"
+    ],
+    "engine": "graphrag",
+    "meta": {
+      "relation": "pueden acceder",
+      "object": "enlaces de solo lectura",
+      "node_source": "llm"
+    }
+  }
+]

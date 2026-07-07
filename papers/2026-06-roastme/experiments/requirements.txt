@@ -1,0 +1,15 @@
+# Este experimento corre sobre la .venv de pygaussia, que ya trae gaussia + el embedder
+# (sentence-transformers) + networkx + langchain + pyyaml + python-dotenv. Lo único que
+# hay que agregar es openai:
+#
+#   VIRTUAL_ENV=../../.venv uv pip install "openai>=1.0.0"
+#
+# Si preferís un entorno propio y aislado, instalá:
+openai>=1.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+networkx>=3.0
+numpy>=1.24
+sentence-transformers>=2.2
+# y el paquete gaussia (editable desde la raíz del repo):
+#   uv pip install -e ../..

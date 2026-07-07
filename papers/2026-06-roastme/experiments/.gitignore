@@ -1,0 +1,22 @@
+# Secretos y entornos
+.env
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# El PDF del paper GRAG es material de referencia (copyright), no se versiona.
+# Está citado por URL en el README y en engines_grag.py.
+Aclanthology
+*.pdf
+
+# results/ es scratch de tus propias corridas: se ignora por default. PERO se versionan los
+# datasets CANÓNICOS que el notebook carga por defecto, para que funcione tras clonar el repo
+# sin API key, y el reporte de la comparativa multi-modelo.
+results/*
+!results/dataset_ley_compose.json
+!results/dataset_ley_grag.json
+!results/dataset_faq_compose.json
+!results/dataset_ley_deterministic.json
+!results/compare_grag.json
+!results/compare_grag.html

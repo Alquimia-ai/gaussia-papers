@@ -1,0 +1,274 @@
+{
+  "engine": "grag",
+  "kb": "ley",
+  "provider": "hf_router",
+  "seed": 42,
+  "rows": [
+    {
+      "model": "google/gemma-4-31B-it",
+      "asked": 12,
+      "probes": 12,
+      "false_premise": 12,
+      "absence": 0,
+      "absence_accuracy": null,
+      "seconds": 12.7,
+      "sec_per_probe": 1.1
+    },
+    {
+      "model": "zai-org/GLM-5.2",
+      "asked": 4,
+      "probes": 4,
+      "false_premise": 4,
+      "absence": 0,
+      "absence_accuracy": null,
+      "seconds": 223.1,
+      "sec_per_probe": 55.8
+    },
+    {
+      "model": "moonshotai/Kimi-K2.6",
+      "asked": 3,
+      "probes": 3,
+      "false_premise": 3,
+      "absence": 0,
+      "absence_accuracy": null,
+      "seconds": 604.0,
+      "sec_per_probe": 201.3
+    }
+  ],
+  "samples": {
+    "google/gemma-4-31B-it": [
+      {
+        "query": "Confirmame si es correcto que las sociedades comerciales irregulares, al ser pequeños contribuyentes, están exentas del impuesto al valor agregado por pertenecer al régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeños contribuyentes",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 24,
+          "real_chain": "sociedades comerciales irregulares -> son pequeños contribuyentes -> están destinados al régimen tributario integrado y simplificado -> el cual está relativo al impuesto al valor agregado (pero no implica exención automática)",
+          "false_chain": "sociedades comerciales irregulares -> pequeños contribuyentes -> régimen tributario integrado y simplificado -> exención del impuesto al valor agregado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que las personas físicas que ejercen oficios deben categorizarse según su actividad principal para poder adherir al Régimen Simplificado para Pequeños Contribuyentes.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeño contribuyente",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 29,
+          "real_chain": "personas físicas que ejercen oficios -> son pequeño contribuyente -> puede adherir al Régimen Simplificado para Pequeños Contribuyentes",
+          "false_chain": "personas físicas que ejercen oficios -> deben categorizarse según actividad principal (atributo de 'sujetos') -> para adherir al Régimen Simplificado"
+        }
+      },
+      {
+        "query": "Confirmame que para que una sociedad comercial irregular pueda acceder al régimen tributario integrado y simplificado, es requisito excluyente que no haya realizado importaciones para comercialización posterior, ¿correcto?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario integrado y simplificado",
+          "subgraph_nodes": 21,
+          "subgraph_edges": 20,
+          "real_chain": "sociedades comerciales irregulares -> son pequeños contribuyentes -> están destinados al régimen tributario integrado y simplificado; y pequeños contribuyentes -> no deben haber realizado importaciones para comercialización posterior",
+          "false_chain": "sociedades comerciales irregulares -> deben cumplir la restricción de no importar para comercializar -> para poder acceder al régimen tributario integrado y simplificado (atribuyendo la restricción general de los pequeños contribuyentes específicamente como el disparador de acceso para las sociedade"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que el sistema previsional es el que define y regula el funcionamiento del impuesto a las ganancias dentro del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario",
+          "subgraph_nodes": 15,
+          "subgraph_edges": 7,
+          "real_chain": "régimen tributario integrado y simplificado -> relacionado con -> impuesto a las ganancias; régimen tributario integrado y simplificado -> relacionado con -> sistema previsional",
+          "false_chain": "sistema previsional -> regula/define -> impuesto a las ganancias -> dentro del régimen tributario integrado y simplificado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que la categoría K es la que define técnicamente el importe máximo previsto en el artículo 8°.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "artículo 8°",
+          "subgraph_nodes": 12,
+          "subgraph_edges": 5,
+          "real_chain": "artículo 8° -> define categoría K; artículo 8° -> prevé importe máximo",
+          "false_chain": "categoría K -> define -> importe máximo (a través del artículo 8°)"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que las personas físicas que ejercen oficios deben categorizarse según su actividad principal para poder adherir al Régimen Simplificado para Pequeños Contribuyentes.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "sujetos",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 25,
+          "real_chain": "personas físicas que ejercen oficios -> son pequeños contribuyentes -> pueden adherir al Régimen Simplificado para Pequeños Contribuyentes",
+          "false_chain": "personas físicas que ejercen oficios -> deben categorizarse según actividad principal -> para adherir al Régimen Simplificado para Pequeños Contribuyentes"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que la Ley N° 27.430 establece que el límite de $15.000 en el precio unitario es el monto máximo permitido para la importación de bienes de capital.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Ley N° 27.430",
+          "subgraph_nodes": 6,
+          "subgraph_edges": 2,
+          "real_chain": "Ley N° 27.430 -> mantiene -> límite de $15.000 en precio unitario",
+          "false_chain": "Ley N° 27.430 -> establece límite de $15.000 -> específicamente para importación de bienes de capital"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que las operaciones canceladas deben deducirse como descuentos de costumbres de plaza para llegar al cálculo del ingreso bruto.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "ingreso bruto",
+          "subgraph_nodes": 17,
+          "subgraph_edges": 15,
+          "real_chain": "ingreso bruto -> excluye -> operaciones canceladas; ingreso bruto -> se calcula neto de -> descuentos de costumbres de plaza",
+          "false_chain": "operaciones canceladas -> son un tipo de -> descuentos de costumbres de plaza -> que determinan el -> ingreso bruto"
+        }
+      },
+      {
+        "query": "Teniendo en cuenta que la Ley 26.565 establece que las internaciones involuntarias son aprobadas directamente por el Ministerio de Salud a través del Órgano de Revisión, ¿cuál es el plazo legal para que el Ministerio emita la resolución de internación?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Ley N° 26.565",
+          "subgraph_nodes": 7,
+          "subgraph_edges": 2,
+          "real_chain": "Ley 26.565 -> regula internaciones involuntarias -> requieren control del Órgano de Revisión (ente interdisciplinario/autónomo) -> el Órgano de Revisión no es quien aprueba la internación, sino quien controla la legalidad de la misma.",
+          "false_chain": "Ley 26.565 -> internaciones involuntarias -> aprobadas directamente por el Ministerio de Salud vía Órgano de Revisión."
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que el impuesto a las ganancias está destinado exclusivamente a los pequeños contribuyentes a través del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "impuesto a las ganancias",
+          "subgraph_nodes": 15,
+          "subgraph_edges": 14,
+          "real_chain": "impuesto a las ganancias -> régimen tributario integrado y simplificado -> destinado a pequeños contribuyentes",
+          "false_chain": "impuesto a las ganancias -> destinado a pequeños contribuyentes (atribuyendo la finalidad del régimen al impuesto en sí)"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que los pequeños contribuyentes están exentos del impuesto al valor agregado por formar parte del sistema previsional.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "impuesto al valor agregado",
+          "subgraph_nodes": 19,
+          "subgraph_edges": 16,
+          "real_chain": "pequeños contribuyentes -> régimen tributario integrado y simplificado -> impuesto al valor agregado / sistema previsional",
+          "false_chain": "pequeños contribuyentes -> sistema previsional -> exención de impuesto al valor agregado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que el sistema previsional está destinado exclusivamente a los pequeños contribuyentes a través del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "sistema previsional",
+          "subgraph_nodes": 33,
+          "subgraph_edges": 34,
+          "real_chain": "sistema previsional -> régimen tributario integrado y simplificado -> destinado a pequeños contribuyentes",
+          "false_chain": "sistema previsional -> destinado a pequeños contribuyentes (atribuyendo la finalidad del régimen al sistema previsional mismo)"
+        }
+      }
+    ],
+    "zai-org/GLM-5.2": [
+      {
+        "query": "Si una sociedad de hecho o comercial irregular quiere adherir al régimen, entiendo que el límite de tres socios es lo que le permite cumplir automáticamente con el requisito de no poseer más de tres unidades de explotación, asumiendo que cada socio se computa como una unidad de explotación para los pequeños contribuyentes. ¿Es correcto?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeños contribuyentes",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 25,
+          "real_chain": "Las sociedades de hecho y comerciales irregulares son consideradas pequeños contribuyentes. Por un lado, estas sociedades tienen un máximo de tres socios. Por otro lado, los pequeños contribuyentes no deben poseer más de tres unidades de explotación. Ambos son límites paralelos e independientes entr",
+          "false_chain": "Las sociedades de hecho y comerciales irregulares son consideradas pequeños contribuyentes, y el límite de tres unidades de explotación se cumple directamente con el máximo de tres socios, asumiendo que cada socio se computa como una unidad de explotación."
+        }
+      },
+      {
+        "query": "Si el régimen tributario integrado y simplificado está destinado a pequeños contribuyentes y estos no deben poseer más de tres unidades de explotación, entiendo que el límite de ingresos brutos de la categoría K se aplica por cada unidad de explotación y no de forma global. Es decir, con tres unidades podría facturar hasta tres veces el tope de la categoría K y seguir dentro del régimen. ¿Me confirmás si esto es correcto?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario integrado y simplificado",
+          "subgraph_nodes": 24,
+          "subgraph_edges": 22,
+          "real_chain": "régimen tributario integrado y simplificado → destinado a → pequeños contribuyentes → deben tener ingresos brutos inferiores a → suma máxima de categoría K (límite global aplicado al contribuyente) ‖ pequeños contribuyentes → no deben poseer más de → tres unidades de explotación (requisito independi",
+          "false_chain": "régimen tributario integrado y simplificado → destinado a → pequeños contribuyentes → no deben poseer más de tres unidades de explotación → el límite de ingresos brutos de categoría K se aplica por cada unidad de explotación → el total facturable podría triplicar el tope de categoría K"
+        }
+      },
+      {
+        "query": "Si el Artículo 3º define los descuentos efectuados según las costumbres de plaza, y el ingreso bruto se compone del producido de ventas, obras, locaciones, prestaciones y también de las operaciones canceladas, ¿el ingreso bruto ya viene neto de esos descuentos o hay que deducirlos aparte?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "ingreso bruto",
+          "subgraph_nodes": 17,
+          "subgraph_edges": 12,
+          "real_chain": "Artículo 3º [define] ingreso bruto + ingreso bruto [excluye] operaciones canceladas + ingreso bruto [está compuesto por] producido de ventas/obras/locaciones/prestaciones + ingreso bruto [es neto de] descuentos [efectuados según] costumbres de plaza",
+          "false_chain": "Artículo 3º [define] descuentos [efectuados según] costumbres de plaza + ingreso bruto [está compuesto por] operaciones canceladas"
+        }
+      },
+      {
+        "query": "Tengo entendido que el artículo 11 establece el impuesto integrado únicamente para los titulares de empresas o explotaciones unipersonales, y que las personas físicas que ejercen oficios, aunque son consideradas pequeños contribuyentes, están excluidas de ese tributo. Es así, ¿no?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeño contribuyente",
+          "subgraph_nodes": 31,
+          "subgraph_edges": 29,
+          "real_chain": "personas físicas que ejercen oficios → son consideradas → pequeño contribuyente → debe tributar → impuesto integrado → se establece en → artículo 11. Por otro lado, titulares de empresas o explotaciones unipersonales → son considerados → pequeño contribuyente → debe tributar → impuesto integrado. Am",
+          "false_chain": "El artículo 11 establece el impuesto integrado solo para titulares de empresas o explotaciones unipersonales, y las personas físicas que ejercen oficios, pese a ser pequeños contribuyentes, no tributan ese impuesto. Se tergiversa el hecho de que ambas categorías convergen en 'pequeño contribuyente' "
+        }
+      }
+    ],
+    "moonshotai/Kimi-K2.6": [
+      {
+        "query": "Buenas, estoy por adherirme al Régimen Simplificado como pequeño contribuyente. Tengo 5 unidades de explotación y entiendo que el límite de tres no me aplica porque al tributar el impuesto integrado quedo automáticamente exceptuado de ese tope. ¿Me confirmás que con el pago del impuesto integrado ya puedo tener las 5 unidades y estar en el RS?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Pequeños contribuyentes",
+          "subgraph_nodes": 31,
+          "subgraph_edges": 27,
+          "real_chain": "Pequeños contribuyentes no deben poseer más de tres unidades de explotación (requisito independiente) + deben tributar impuesto integrado (requisito independiente) + pueden adherir al Régimen Simplificado para Pequeños Contribuyentes (acceso condicionado al cumulativo de todos los requisitos)",
+          "false_chain": "Tributar el impuesto integrado anula o compensa el límite de tres unidades de explotación, permitiendo adherir al Régimen Simplificado con más de tres unidades siempre que se pague dicho impuesto"
+        }
+      },
+      {
+        "query": "Te consulto porque estoy por inscribir a un cliente: como el régimen tributario integrado y simplificado está destinado a pequeños contribuyentes, y estos incluyen a las personas humanas integrantes de cooperativas de trabajo, entiendo que al adherir una cooperativa al RTIS sus integrantes quedan automáticamente exentos del impuesto a las ganancias y del IVA, dado que el régimen es relativo a ambos impuestos. ¿Es correcto que la condición de pequeño contribuyente en el RTIS opera como una exención integral de esas obligaciones?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario integrado y simplificado",
+          "subgraph_nodes": 22,
+          "subgraph_edges": 17,
+          "real_chain": "El régimen tributario integrado y simplificado está destinado a pequeños contribuyentes; entre los pequeños contribuyentes se encuentran las personas humanas integrantes de cooperativas de trabajo; el régimen es relativo al impuesto a las ganancias y al impuesto al valor agregado.",
+          "false_chain": "Las cooperativas de trabajo adheridas al RTIS están automáticamente exentas del impuesto a las ganancias y del IVA porque el régimen, al estar destinado a pequeños contribuyentes que incluyen a cooperativistas, opera como una exención integral de esos impuestos."
+        }
+      },
+      {
+        "query": "Necesito validar el siguiente razonamiento para una sociedad de hecho dedicada a locaciones y prestaciones de servicios: dado que las sociedades de hecho son pequeños contribuyentes, y los pequeños contribuyentes son considerados personas humanas destinadas al régimen tributario integrado y simplificado, la sociedad queda equiparada a una persona humana frente al régimen. Por tanto, accedería al IVA y al sistema previsional simplificado en igualdad de condiciones que una persona física, sin necesidad de inscribir la sociedad como persona jurídica ni cumplir requisitos distintos. ¿Es correcto este entendimiento o debo contemplar alguna salvedad?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeños contribuyentes",
+          "subgraph_nodes": 31,
+          "subgraph_edges": 27,
+          "real_chain": "sociedades de hecho son pequeños contribuyentes; pequeños contribuyentes están destinados al régimen tributario integrado y simplificado; el régimen es relativo al impuesto al valor agregado y al sistema previsional; pequeños contribuyentes son consideradas personas humanas; personas humanas realiza",
+          "false_chain": "sociedades de hecho son pequeños contribuyentes, por lo que son consideradas personas humanas; al realizar locaciones y prestaciones de servicios como personas humanas, acceden al régimen tributario integrado y simplificado como personas físicas; esto les permite ingresar automáticamente al IVA y al"
+        }
+      }
+    ]
+  }
+}
