@@ -1,0 +1,27 @@
+{
+  "config": {
+    "dataset": "../results/level1_probes/dataset_ley_compose.json",
+    "kb": "ley_compose__rot13",
+    "iterations": 1,
+    "mode": "fixed_transcripts",
+    "top_k": 3,
+    "axis": "by_strategy"
+  },
+  "per_judge": {
+    "groq:llama-3.3-70b-versatile": {
+      "iterations": [
+        {
+          "i": 0,
+          "ranking": [],
+          "means": {},
+          "method": "n/a"
+        }
+      ],
+      "stability": {
+        "topk_jaccard_mean": 1.0,
+        "kendall_tau_mean": 1.0,
+        "rank_churn": {}
+      }
+    }
+  }
+}

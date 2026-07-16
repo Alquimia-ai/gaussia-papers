@@ -1,0 +1,47 @@
+{
+  "kb": "faq",
+  "engine": "compose",
+  "provider": "groq",
+  "model": null,
+  "config": {
+    "seed": 42,
+    "n_false_premise": null,
+    "n_absence": null
+  },
+  "composition": {
+    "engines": [
+      "rag",
+      "graphrag"
+    ],
+    "per_engine": {
+      "rag": 20,
+      "graphrag": 24
+    },
+    "raw_total": 44,
+    "deduped": 0,
+    "final_total": 44
+  },
+  "tradeoff": [
+    {
+      "engine": "graphrag",
+      "probes": 24,
+      "absence_probes": 0,
+      "absence_scoreable": 0,
+      "absence_accuracy": null,
+      "false_premise_probes": 24
+    },
+    {
+      "engine": "rag",
+      "probes": 20,
+      "absence_probes": 0,
+      "absence_scoreable": 0,
+      "absence_accuracy": null,
+      "false_premise_probes": 20
+    }
+  ],
+  "n_probes": 44,
+  "by_strategy": {
+    "grounded_false_fact": 20,
+    "graph_edge_false_premise": 24
+  }
+}

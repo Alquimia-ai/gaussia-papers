@@ -1,20 +1,20 @@
-"""Universal Probe Library: parameterized entrypoint (Roast Me usage example).
+"""Universal Probe Library: parametrized entrypoint (example usage of Roast Me).
 
-Receives: KB (file or folder), plugins, strategies, retrieval strategy and the LLM
+Takes: KB (file or folder), plugins, strategies, retrieval strategy and the LLM
 (provider + model). Returns a list of N probes + knowledge hooks, and a summary with
-the per-engine breakdown and the trade off table (what the experiments section of the
-paper cites as a tangible result).
+the breakdown per engine and the trade off table (what the experiments section of
+the paper cites as a tangible result).
 
 Usage:
   python universal_probe_library.py --kb ley --engine compose
   python universal_probe_library.py --kb faq --engine rag --provider groq
   python universal_probe_library.py --kb data/mi_kb/ --engine graphrag --model llama-3.3-70b-versatile
 
-The "engine" is the strategy for knowing the knowledge frontier:
+The "engine" is the strategy for knowing the boundary of knowledge:
   deterministic  extractor enumerates the KB (perfect labels, absence). Baseline.
-  rag            retrieves chunks by embeddings, twists facts. Does not handle absence.
-  graphrag       builds an entity graph, recovers absence with a reliable label.
-  compose        runs all applicable ones and merges them with dedup (default).
+  rag            retrieves chunks via embeddings, twists facts. Doesn't do absence.
+  graphrag       builds an entity graph, retrieves absence with a reliable label.
+  compose        runs all applicable engines and merges them with dedup (default).
 """
 
 from __future__ import annotations
@@ -30,10 +30,10 @@ import kb
 import oracle
 from contract import select_engines
 
-HERE = Path(__file__).resolve().parent
-RESULTS = HERE / "results"
+HERE = Path(__file__).resolve().parent.parent  # project root (this file lives in src/)
+RESULTS = HERE / "results" / "level1_probes"
 
-# Example KBs ready to use.
+# Sample KBs ready to use.
 KB_PRESETS = {
     "ley": {"path": kb.KB_DIR, "doc_id": "ley_24977", "kind": "ley", "structured": True,
             "extractor": pl.ley_extractor},
@@ -50,10 +50,11 @@ def _quiet_logs() -> None:
 def build_engines(which: str, client, extractor, provider: str, model: str | None,
                   *, n_false_premise: int | None = None, n_absence: int | None = None,
                   seed: int | None = None):
-    """Builds the engine list according to --engine (composition included).
+    """Builds the list of engines according to --engine (composition included).
 
     n_false_premise / n_absence / seed control the number of probes and
-    reproducibility (the deterministic engine enumerates the full KB on purpose: it is the baseline).
+    reproducibility (the deterministic engine enumerates the full KB on purpose: it's
+    the baseline).
     """
     det = pl.DeterministicEngine(extractor=extractor)
     engines = {"deterministic": det}
@@ -68,7 +69,7 @@ def build_engines(which: str, client, extractor, provider: str, model: str | Non
             rag_kw["n_absence"] = n_absence
             graphrag_kw["n_absence"] = n_absence
         engines["rag"] = RAGEngine(client, **rag_kw)
-        # graphrag: FULL graph as enumeration -> absence with a reliable label (original contribution).
+        # graphrag: FULL graph as enumeration -> absence with reliable label (original contribution).
         engines["graphrag"] = GraphRAGEngine(client, **graphrag_kw)
         # grag: paper technique (subgraph retrieval) -> multi-hop false premise.
         engines["grag"] = GRAGEngine(client, provider=provider, model=model, seed=seed)
@@ -80,10 +81,10 @@ def build_engines(which: str, client, extractor, provider: str, model: str | Non
 
 
 def tradeoff_table(probes) -> list[dict]:
-    """One row per engine: absence (correct real label) and false-premise coverage.
+    """One row per engine: absence (real correct label) and false premise coverage.
 
-    The absence accuracy uses the ORACLE (only for scoring): of the doc=0 probes the
-    oracle can evaluate, how many point to something TRULY nonexistent.
+    Absence accuracy uses the ORACLE (scoring only): of the doc=0 probes that
+    the oracle can evaluate, how many point to something that REALLY doesn't exist.
     """
     rows = []
     for eng in sorted({p.engine for p in probes}):
@@ -131,13 +132,13 @@ def main() -> None:
                     help="strategies to use by id (comma-separated); default: all")
     ap.add_argument("--out", default=None, help="dataset name in results/")
     ap.add_argument("--n-false-premise", type=int, default=None,
-                    help="cap on false-premise probes per LLM engine (default: no cap)")
+                    help="cap of false-premise probes per LLM engine (default: no cap)")
     ap.add_argument("--n-absence", type=int, default=None,
                     help="absence probes per LLM engine (default: the engine's own)")
     ap.add_argument("--seed", type=int, default=None,
                     help="seed for the LLM (reduces variation between runs)")
     ap.add_argument("--no-llm", action="store_true",
-                    help="only engines without LLM (deterministic); does not build a client")
+                    help="only non-LLM engines (deterministic); doesn't build a client")
     args = ap.parse_args()
     _quiet_logs()
 
@@ -149,11 +150,11 @@ def main() -> None:
         extractor = p["extractor"]
     else:
         docs = pl.load_documents(args.kb)
-        extractor = None  # arbitrary KB: no extractor -> deterministic does not apply
+        extractor = None  # arbitrary KB: no extractor -> deterministic engine doesn't apply
 
     plugins, strategies = pl.load_config()
 
-    # Optional filter by plugin / strategy (what Alex requested as a parameter).
+    # Optional filter by plugin / strategy (what Alex asked for as a parameter).
     if args.plugin:
         want = {s.strip() for s in args.plugin.split(",")}
         plugins = {k: v for k, v in plugins.items() if k in want}
@@ -187,7 +188,7 @@ def main() -> None:
     print_summary(info, table, probes)
 
     # Write artifacts.
-    RESULTS.mkdir(exist_ok=True)
+    RESULTS.mkdir(parents=True, exist_ok=True)
     tag = args.out or f"{args.kb}_{args.engine}"
     ds_path = RESULTS / f"dataset_{tag}.json"
     sm_path = RESULTS / f"summary_{tag}.json"

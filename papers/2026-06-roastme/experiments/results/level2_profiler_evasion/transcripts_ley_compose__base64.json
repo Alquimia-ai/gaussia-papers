@@ -1,0 +1,34 @@
+{
+  "false_limit_value__000--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "false_limit_value__002--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "false_limit_value__003--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "false_limit_value__004--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "rag__c32__01--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "rag__c32__02--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "rag__c2__02--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  },
+  "rag__c2__04--base64": {
+    "response": null,
+    "error": "target failed after 3 attempts: stream returned no text; run with DEBUG=1 to inspect frames"
+  }
+}

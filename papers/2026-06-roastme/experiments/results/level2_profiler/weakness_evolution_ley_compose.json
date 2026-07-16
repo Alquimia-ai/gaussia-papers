@@ -1,0 +1,264 @@
+{
+  "config": {
+    "dataset": "results/dataset_ley_compose.json",
+    "kb": "ley_compose",
+    "mode": "fixed_transcripts",
+    "axis": "by_strategy",
+    "top_k": 3,
+    "note": "Roster mixto: gemma+groq corridos sobre 30 probes / 5 iteraciones (cobertura completa). GLM-5.2 y Kimi-K2.6 corridos sobre una muestra reducida (10 probes / 1 iteracion, fallback_k=3) porque son razonadores sin logprobs -> caen a muestreo y son mucho mas lentos de invocar y de juzgar. Ampliar su cobertura queda pendiente si se pide explicitamente."
+  },
+  "per_judge": {
+    "hf_router:google/gemma-4-31B-it": {
+      "iterations": [
+        {
+          "i": 0,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.2,
+            "grounded_false_fact": 0.0182,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "logprobs"
+        },
+        {
+          "i": 1,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.2,
+            "grounded_false_fact": 0.0182,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "logprobs"
+        },
+        {
+          "i": 2,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.2,
+            "grounded_false_fact": 0.0182,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "logprobs"
+        },
+        {
+          "i": 3,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.2,
+            "grounded_false_fact": 0.0182,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "logprobs"
+        },
+        {
+          "i": 4,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.2,
+            "grounded_false_fact": 0.0182,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "logprobs"
+        }
+      ],
+      "stability": {
+        "topk_jaccard_mean": 1.0,
+        "kendall_tau_mean": 1.0,
+        "rank_churn": {
+          "documented_recall": 0,
+          "grounded_false_fact": 0,
+          "nonexistent_article": 0,
+          "false_limit_value": 0,
+          "nonexistent_category": 0
+        }
+      }
+    },
+    "groq:llama-3.3-70b-versatile": {
+      "iterations": [
+        {
+          "i": 0,
+          "ranking": [
+            "documented_recall",
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category"
+          ],
+          "means": {
+            "documented_recall": 0.0167,
+            "false_limit_value": 0.0,
+            "grounded_false_fact": 0.0,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0
+          },
+          "method": "sampling"
+        },
+        {
+          "i": 1,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.0,
+            "grounded_false_fact": 0.0,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "sampling"
+        },
+        {
+          "i": 2,
+          "ranking": [
+            "documented_recall",
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category"
+          ],
+          "means": {
+            "documented_recall": 0.0333,
+            "false_limit_value": 0.0,
+            "grounded_false_fact": 0.0,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0
+          },
+          "method": "sampling"
+        },
+        {
+          "i": 3,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.0,
+            "grounded_false_fact": 0.0,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "sampling"
+        },
+        {
+          "i": 4,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact",
+            "nonexistent_article",
+            "nonexistent_category",
+            "documented_recall"
+          ],
+          "means": {
+            "false_limit_value": 0.0,
+            "grounded_false_fact": 0.0,
+            "nonexistent_article": 0.0,
+            "nonexistent_category": 0.0,
+            "documented_recall": 0.0
+          },
+          "method": "sampling"
+        }
+      ],
+      "stability": {
+        "topk_jaccard_mean": 0.7,
+        "kendall_tau_mean": 0.52,
+        "rank_churn": {
+          "documented_recall": 4,
+          "grounded_false_fact": 1,
+          "nonexistent_article": 1,
+          "false_limit_value": 1,
+          "nonexistent_category": 1
+        }
+      }
+    },
+    "hf_router:zai-org/GLM-5.2": {
+      "iterations": [
+        {
+          "i": 0,
+          "ranking": [
+            "false_limit_value",
+            "grounded_false_fact"
+          ],
+          "means": {
+            "false_limit_value": 0.25,
+            "grounded_false_fact": 0.2222
+          },
+          "method": "sampling"
+        }
+      ],
+      "stability": {
+        "topk_jaccard_mean": 1.0,
+        "kendall_tau_mean": 1.0,
+        "rank_churn": {}
+      }
+    },
+    "hf_router:moonshotai/Kimi-K2.6": {
+      "iterations": [
+        {
+          "i": 0,
+          "ranking": [
+            "grounded_false_fact",
+            "false_limit_value"
+          ],
+          "means": {
+            "grounded_false_fact": 0.1667,
+            "false_limit_value": 0.0
+          },
+          "method": "sampling"
+        }
+      ],
+      "stability": {
+        "topk_jaccard_mean": 1.0,
+        "kendall_tau_mean": 1.0,
+        "rank_churn": {}
+      }
+    }
+  }
+}

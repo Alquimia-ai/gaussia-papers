@@ -1,18 +1,19 @@
 """Multi-model comparison: runs probe generation with several LLMs and builds a table
 + a readable HTML report of how each model behaves. This is what Alex asked for the paper.
 
-Uses the `hf_router` provider (HF Inference Providers, serverless) by default: no need to
-create endpoints, usage is billed to the org via HF_BILL_TO. WATCH the cost/time: GLM and Kimi
-are reasoning models (they burn many tokens and are 60-110x slower than Gemma). That's why you
-can request DIFFERENT counts per model: many from Gemma, few from the reasoners.
+Uses the `hf_router` provider (HF Inference Providers, serverless) by default: no need
+to create endpoints, usage is billed to the org via HF_BILL_TO. WATCH OUT for cost/time: GLM
+and Kimi are reasoning models (they burn a lot of tokens and are 60-110x slower than Gemma).
+That's why you can request DIFFERENT quantities per model: many from Gemma, few from the
+reasoners.
 
 Usage:
   PY=../../.venv/bin/python
   $PY compare_models.py --engine grag \
      --models "google/gemma-4-31B-it=12,zai-org/GLM-5.2=4,moonshotai/Kimi-K2.6=3"
 
-Outputs in results/: compare_<engine>.json (data) and compare_<engine>.html (readable report,
-opens in the browser and shows each model's full probes, untruncated).
+Outputs in results/: compare_<engine>.json (data) and compare_<engine>.html (readable
+report, opens in the browser and shows the complete probes of each model, untruncated).
 """
 
 from __future__ import annotations
@@ -30,8 +31,8 @@ from pathlib import Path
 import probe_library as pl
 import oracle
 
-HERE = Path(__file__).resolve().parent
-RESULTS = HERE / "results"
+HERE = Path(__file__).resolve().parent.parent  # project root (this file lives in src/)
+RESULTS = HERE / "results" / "level1_model_comparison"
 
 # Default plan: many from Gemma (viable), few from the reasoners (slow/expensive).
 DEFAULT_PLAN = "google/gemma-4-31B-it=12,zai-org/GLM-5.2=4,moonshotai/Kimi-K2.6=3"
@@ -97,7 +98,7 @@ def _parse_plan(plan: str, default_n: int) -> list[tuple[str, int]]:
 
 
 def _write_html(path: Path, engine: str, rows: list, samples: dict) -> None:
-    """Readable report: summary table + each model's full probes (untruncated)."""
+    """Readable report: summary table + the complete probes of each model (untruncated)."""
     def esc(x): return html.escape(str(x or ""))
     css = """
     body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:1000px;margin:2rem auto;
@@ -118,10 +119,10 @@ def _write_html(path: Path, engine: str, rows: list, samples: dict) -> None:
     parts = [f"<!doctype html><meta charset='utf-8'><title>Model comparison ({esc(engine)})</title>",
              f"<style>{css}</style>",
              f"<h1>Multi-model comparison &mdash; engine <code>{esc(engine)}</code></h1>",
-             "<p>How each model generates probes over the same KB (Ley 24.977). Chain quality "
-             "is a qualitative read; the table measures count and speed.</p>"]
+             "<p>How each model generates probes over the same KB (Ley 24.977). The quality of "
+             "the chains is a qualitative read; the table measures quantity and speed.</p>"]
     # summary table
-    parts.append("<table class='sum'><thead><tr><th>model</th><th>asked</th><th>generated</th>"
+    parts.append("<table class='sum'><thead><tr><th>model</th><th>requested</th><th>generated</th>"
                  "<th>false premise</th><th>total sec</th><th>sec/probe</th></tr></thead><tbody>")
     for r in rows:
         if "error" in r:
@@ -148,11 +149,11 @@ def _write_html(path: Path, engine: str, rows: list, samples: dict) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Multi-model comparison (Roast Me)")
     ap.add_argument("--models", default=DEFAULT_PLAN,
-                    help="comma-separated ids; count per model with 'id=N' (e.g. gemma=12,glm=4)")
+                    help="comma-separated ids; quantity per model with 'id=N' (e.g. gemma=12,glm=4)")
     ap.add_argument("--engine", default="grag", choices=["grag", "rag", "graphrag"])
     ap.add_argument("--kb", default="ley")
     ap.add_argument("--provider", default="hf_router")
-    ap.add_argument("--n-probes", type=int, default=4, help="count per model if not specified with =N")
+    ap.add_argument("--n-probes", type=int, default=4, help="quantity per model if not specified with =N")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--samples", type=int, default=100, help="probes to save per model in the report")
     args = ap.parse_args()
@@ -194,14 +195,14 @@ def main() -> None:
               f"({row['sec_per_probe']}s/probe)", flush=True)
 
     print(f"\n=== comparison (engine={args.engine}) ===", flush=True)
-    print(f"  {'model':<32}{'ask':>5}{'gen':>5}{'fp':>8}{'sec':>9}{'s/pr':>8}", flush=True)
+    print(f"  {'model':<32}{'req':>5}{'gen':>5}{'f_prem':>8}{'sec':>9}{'s/pr':>8}", flush=True)
     for r in rows:
         if "error" in r:
             print(f"  {r['model']:<32}  ERROR", flush=True); continue
         print(f"  {r['model']:<32}{r['asked']:>5}{r['probes']:>5}{r['false_premise']:>8}"
               f"{r['seconds']:>9.1f}{(r['sec_per_probe'] or 0):>8.1f}", flush=True)
 
-    RESULTS.mkdir(exist_ok=True)
+    RESULTS.mkdir(parents=True, exist_ok=True)
     js = RESULTS / f"compare_{args.engine}.json"
     js.write_text(json.dumps({"engine": args.engine, "kb": args.kb, "provider": args.provider,
                               "seed": args.seed, "rows": rows, "samples": samples},

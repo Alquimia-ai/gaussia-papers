@@ -1,186 +1,160 @@
-# Roast Me — Universal Probe Library (worked example)
+# Roast Me — Universal Probe Library (usage example)
 
-Runnable example of the first module of the Roast Me framework: the **Universal Probe
-Library**. It takes a Knowledge Base, plugins and strategies, and a configurable retrieval
-strategy, and returns a list of **probes** (red-teaming seed questions) together with their
-**knowledge hooks** (provenance: which entity each probe points at, and whether that entity
-exists in the KB — the ground truth for the downstream test).
+Executable example of the Roast Me framework. Generates **probes** (red-teaming seed
+questions) from a Knowledge Base, sends them to a real assistant, and measures whether
+the assistant **falls** for the trap or **resists**.
 
-Roast Me is a framework: it does not impose an implementation. This is a worked example that
-grounds the theory in one case (Argentina's Ley 24.977, the Monotributo tax regime) and
-measures tangible results. Self-contained folder; it only imports the `gaussia` package and
-does not touch `src/`, `metrics/` or `examples/`.
+## To see the results: open the notebooks, they already have everything inside
 
-> Note on language: the code, comments and docs are in English, but the LLM prompts, the
-> generated probe questions and the KB stay in **Spanish**, because the example operates on a
-> Spanish-language knowledge base and the probes must be Spanish to match the target domain.
+No need to run anything or have API keys. Open in this order, with the
+`Roast Me (pygaussia)` kernel:
 
-## Where to start
+1. **`jupyter/roastme.ipynb`** — Level 1: how probes are generated, 3 engines
+   compared, the canonical dataset of 204 probes.
+2. **`jupyter/compare_models.ipynb`** — comparison: how each LLM family generates
+   probes (gemma / z.ai / kimi).
+3. **`jupyter/profiler.ipynb`** — Level 2: the real agent evaluated, weakness
+   profile, literal inferences (warning: preliminary read, see below).
+4. **`jupyter/roastme_promptfoo.ipynb`** — generic risk plugins + evasion
+   (inspired by promptfoo, warning: scaffold/exploratory, see below).
 
-Open **`jupyter/roastme.ipynb`** and run all cells. By default it loads the versioned
-canonical datasets (instant, stable, no API key required) and walks through each engine, the
-measured trade-off and sample probes. It is the guided tour of the module. To regenerate live
-or change the amount of probes, set `REGENERATE = True` in the config cell.
+All four load data already frozen in `results/` and show real results
+directly on opening — regenerating live is optional (last section).
 
-## The core idea: how the knowledge frontier is known
+## The idea: how the knowledge boundary is known
 
-Every probe needs a label (exists / does not exist). How reliable that label is depends on
-how the KB's *knowledge frontier* (what exists and what does not) is known. We implement four
-engines behind a single contract:
+Each probe needs a label (exists / doesn't exist). How reliable that label is depends
+on how the KB's knowledge boundary is known. Three engines behind the
+same contract, which **compose** (you don't pick just one):
 
-| Engine | How it knows the frontier | Absence (reliable label) | Own contribution |
+| Engine | How it knows the boundary | Absence (reliable label) | Own contribution |
 |---|---|---|---|
-| `deterministic` | an extractor enumerates the KB | yes (baseline, perfect label) | absence control |
-| `rag` | retrieves chunks by embeddings | no | widest false-premise coverage |
-| `graphrag` | full graph as an enumeration | yes (recovers it) | absence without a hand-written extractor |
-| `grag` | retrieves a textual SUBGRAPH (GRAG paper) | no (doc=1) | MULTI-HOP false premise (chained relations) |
+| `deterministic` | extractor enumerates the KB | yes (baseline, perfect label) | absence control |
+| `rag` | retrieves chunks via embeddings | no | maximum false-premise coverage |
+| `graphrag` | FULL graph as enumeration | yes (retrieves it) | absence without a hand-built extractor |
+| `grag` | retrieves a textual SUBGRAPH (GRAG paper, Hu et al. NAACL 2025) | no (doc=1) | MULTI-HOP false premise |
 
-Two of the engines use knowledge graphs for different purposes: `graphrag` uses the whole
-graph as a catalog (to recover absence), while `grag` implements the technique from the
-*GRAG* paper (Hu et al., NAACL 2025), retrieving the subgraph relevant to a query to generate
-multi-hop traps. `grag` is faithful to the paper on the retrieval side (top-N ego-graphs +
-soft pruning + hierarchical text description); the "graph view" via soft prompts is out of
-scope because embeddings cannot be injected into the model through a chat API (see
-`engines_grag.py`).
+## Tangible result — Level 1 (compose over Ley 24.977)
 
-You do not pick one engine: they **compose**. The extractor is not a branch of a cascade, it
-is an extra capability. When an extractor is available all engines run and their probes are
-merged with dedup (on an overlap the most reliable label wins). Without an extractor only the
-LLM engines run.
-
-## Setup
-
-Requires a Python environment with the `gaussia` package (embedder, retriever) plus the
-dependencies in `requirements.txt` (`openai`, `networkx`, `numpy`, `sentence-transformers`,
-`pyyaml`, `python-dotenv`). The simplest option is to reuse the `.venv` from the `pygaussia`
-repo (which already ships all of them); otherwise create an environment and install `gaussia`
-+ `requirements.txt`.
-
-Create a `.env` file in this folder with your credentials (it is gitignored):
-
-```bash
-GROQ_API_KEY=...        # for the default Groq provider
-# Optional, for the multi-model comparison via HuggingFace Inference Providers:
-HF_TOKEN=...            # fine-grained token with "Make calls to Inference Providers"
-HF_BILL_TO=...          # org to bill serverless usage to (X-HF-Bill-To header)
-```
-
-## Usage
-
-```bash
-# PY = the python of the environment with gaussia + requirements (e.g. the pygaussia .venv).
-PY=python
-
-# Composition over the law (structured KB): produces the trade-off table.
-$PY universal_probe_library.py --kb ley --engine compose
-
-# A single engine (ablation / paper tables).
-$PY universal_probe_library.py --kb ley --engine graphrag
-$PY universal_probe_library.py --kb ley --engine rag
-
-# Deterministic only, no LLM and no key.
-$PY universal_probe_library.py --kb ley --engine deterministic --no-llm
-
-# Free-text KB (no extractor -> LLM engines only).
-$PY universal_probe_library.py --kb faq --engine compose
-
-# Your own KB + configurable model.
-$PY universal_probe_library.py --kb data/my_kb/ --engine compose --provider groq --model llama-3.3-70b-versatile
-
-# Controllable amount + reproducibility: 12 false-premise and 5 absence probes per LLM engine.
-$PY universal_probe_library.py --kb ley --engine compose --n-false-premise 12 --n-absence 5 --seed 42
-
-# Restrict to a plugin/strategy subset.
-$PY universal_probe_library.py --kb ley --engine compose --plugin fabrication,false_premise
-
-# GRAG paper engine: multi-hop false premise over subgraphs.
-$PY universal_probe_library.py --kb ley --engine grag --seed 42
-
-# Via HuggingFace serverless router (set HF_TOKEN + HF_BILL_TO in .env).
-$PY universal_probe_library.py --kb ley --engine grag --provider hf_router --model google/gemma-4-31B-it
-```
-
-Parameters: `--kb` (preset `ley`/`faq` or a path to a `.md`/folder), `--engine`
-(`compose|deterministic|rag|graphrag|grag`), `--provider` (`groq|openai|hf|hf_router`),
-`--model`, `--no-llm`, `--out`, `--n-false-premise` (cap of false-premise probes per LLM
-engine), `--n-absence` (absence probes per LLM engine), `--seed` (reduces run-to-run
-variation), `--plugin` / `--strategy` (comma-separated subsets). The deterministic engine
-enumerates the whole KB on purpose, so its count is not capped: it is the perfect-label
-baseline.
-
-## Outputs (in `results/`)
-
-- `dataset_<kb>_<engine>.json`: the probes + knowledge hooks.
-- `summary_<kb>_<engine>.json`: per-engine breakdown, dedup and the **trade-off table**
-  (probes, absence probes, per-engine absence accuracy, false-premise coverage).
-
-`results/` is scratch for your own runs; only the canonical datasets that the notebook loads
-by default are versioned (so it works after cloning, without an API key).
-
-## Tangible result (compose over the law)
-
-| engine | probes | absence | absence acc. | false premise |
+| engine | probes | absence | acc. absence | false premise |
 |---|---|---|---|---|
 | deterministic | 65 | 7 | 1.00 | 58 |
 | graphrag | 40 | 8 | 1.00 | 32 |
 | rag | 99 | 10 | 0.00 | 89 |
 
-(Canonical run frozen in `results/dataset_ley_compose.json`, generated with `--seed 42`. The
-notebook loads it by default, so it reproduces these exact numbers. When regenerating live the
-counts may vary slightly due to the nature of the LLM, but the trade-off pattern — and above
-all the absence accuracy — is stable.)
+Only the deterministic engine and GraphRAG get absence right (GraphRAG **retrieves** it
+with the graph); RAG invents articles that do exist (acc 0.00) but delivers the widest
+false-premise coverage. That's the trade off, measured on the same KB.
 
-Reading: only the deterministic and GraphRAG engines do absence well (GraphRAG **recovers** it
-with the graph); RAG, even while retrieving fragments, invents articles that do exist
-(acc 0.00) but provides the widest false-premise coverage. That is the trade-off, measured on
-the same KB. On the FAQ (free text) the deterministic engine does not apply and both LLM
-engines generalize to qualitative false premises, with no measurable absence.
-
-## Multi-model comparison (`compare_models.py`)
-
-The generator LLM is configurable, so we can compare how each model generates probes.
-`compare_models.py` runs an engine (default `grag`) with several models through the
-`hf_router` provider (HuggingFace Inference Providers, serverless: no endpoints to create,
-usage billed to the org via `HF_BILL_TO`) and produces `results/compare_<engine>.json` plus a
-readable report `results/compare_<engine>.html` with the full probes of each model.
-
-```bash
-$PY compare_models.py --engine grag \
-   --models "google/gemma-4-31B-it=12,zai-org/GLM-5.2=4,moonshotai/Kimi-K2.6=3"
-```
-
-Different amounts are requested per model because cost/latency is very uneven. Finding from
-the canonical run (`results/compare_grag.html`):
+## Tangible result — multi-model generation comparison
 
 | model | sec/probe | reading |
 |---|---|---|
-| `google/gemma-4-31B-it` (12B dense) | ~1s | workhorse: fast, cheap, good quality |
-| `zai-org/GLM-5.2` (753B reasoning) | ~56s | most sophisticated multi-hop traps; 50x slower |
-| `moonshotai/Kimi-K2.6` (1T reasoning) | ~200s | quality similar to GLM but 180x slower; hard to justify |
+| `google/gemma-4-31B-it` | ~1.1s | workhorse: fast, cheap, good quality |
+| `zai-org/GLM-5.2` (reasoning) | ~59.6s | more sophisticated multi-hop traps; ~54x slower |
+| `moonshotai/Kimi-K2.6` (reasoning) | ~103.6s | the most elaborate (chains 2+ real facts); ~94x slower |
 
-The table measures amount and latency; the quality of the chains is a qualitative reading
-(measuring it objectively would require an LLM judge, which belongs to a later stage).
+## Result — Level 2 (Profiler: real agent evaluated)
+
+An **LLM judge** decides for each agent response whether it **fell** for the trap or
+**resisted**, and aggregates the verdicts into an *assistant profile* (where it's most
+likely to fall + which KB entities broke it).
+
+> **Warning: preliminary read, not a paper result yet.** This is a first validation
+> run of the pipeline (30 of 204 probes; the 4 judges — gemma, groq, GLM-5.2,
+> Kimi-K2.6 — didn't run under equal conditions; the judge was never audited against
+> human criteria; groq generates the probes AND judges; the verdicts are stochastic). The
+> pipeline works end to end — that's what's proven. Before citing the numbers as a
+> final result: scale to the full dataset and run the 4 judges with the
+> same config.
+
+## Result — generic risk plugins + evasion (inspired by promptfoo)
+
+We investigated promptfoo (`plugins` = risk category, `strategies` = delivery
+disguise) to see what it adds to the metric in general. Full detail and preselection
+in [`promptfoo_research/plugins_and_strategies.md`](promptfoo_research/plugins_and_strategies.md).
+
+> **Warning: scaffold/exploratory.** `GenericRiskEngine.generate_proposed()` generates
+> probes via LLM (none hand-written) for 7 KB-entity-free plugins (prompt-extraction,
+> excessive-agency, hallucination, etc. — 4 remain documented as `scaffolded`, not
+> implemented), optionally anchored to a description of the agent under test. The
+> evasion layer (`base64`/`rot13`)
+> found something real: the response provider (`claude-opus-4-8`) blocks with
+> `content_filter` the "decode this and answer" pattern — 8/8 probes blocked in
+> both strategies, before the assistant's logic even comes into play. The
+> multi-turn scaffold (`ConversationSession`) proves the session persists across turns, but
+> does NOT implement a real escalation strategy (it's not Crescendo). See
+> `jupyter/roastme_promptfoo.ipynb` for the detail with real data.
 
 ## Methodological integrity
 
-The oracle (exact enumeration of the KB) is used **only for scoring**. It is never passed to
-the LLM engine or to the verifier, which works by retrieval (RAG) or by graph membership
-(GraphRAG). GraphRAG produces labels only as good as the graph: the structural pass (headers)
-is reliable, the LLM pass over free text inherits the graph's noise.
+The oracle (exact enumeration of the KB) is used **only for scoring**. It's never passed
+to the LLM engine or to the verifier, which works via retrieval (RAG) or graph
+membership (GraphRAG).
 
-## Files
+## Structure
 
-- `contract.py` — durable contract (Document, KnowledgeHook, Probe, ProbeEngine, selectors).
-- `probe_library.py` — DeterministicEngine + composition (merge/dedup) + config/docs loading.
-- `engines_rag.py` — RAGEngine (gaussia embeddings + LLM fact twisting).
-- `engines_graphrag.py` — GraphRAGEngine (full structural graph + LLM triples; absence).
-- `engines_grag.py` — GRAGEngine faithful to the paper (subgraph retrieval + multi-hop false premise).
-- `kb.py` — example extractor for Ley 24.977.
-- `oracle.py` — honest scoring (exact enumeration of the KB, scoring only).
-- `config.py` — LLM provider registry (Groq, OpenAI, HuggingFace endpoint and router).
-- `config/plugins.yaml`, `config/strategies.yaml` — risk families and attack patterns.
-- `universal_probe_library.py` — parameterized entrypoint (single engine or composition).
-- `compare_models.py` — multi-model comparison (table + HTML report).
-- `jupyter/roastme.ipynb` — guided tour of the module (start here).
-- `data/` — example KBs (Ley 24.977, FAQ Aurora).
-- `results/` — outputs; only the canonical datasets used by the notebook are versioned.
+```
+roastme/
+├── jupyter/              # the 4 notebooks — the tour (start here)
+├── results/              # frozen data read by the notebooks (see results/README.md)
+├── src/                  # all the code (plain scripts, run from the root)
+├── data/                 # sample KBs (Ley 24.977, FAQ Aurora)
+├── config/               # plugins/strategies (KB) + generic_plugins/evasion (promptfoo)
+└── promptfoo_research/   # promptfoo plugins/strategies research (not code)
+```
+
+## Optional: regenerate from scratch
+
+Only needed if you want to run something live (needs a `.env` file with API keys — see
+`config.py`/`target_client.py` for the exact variable names). Everything is invoked
+**from the `roastme/` root**:
+
+```bash
+PY=../../.venv/bin/python
+
+# Level 1: generate the canonical dataset (the 3 composed engines)
+$PY src/universal_probe_library.py --kb ley --engine compose
+
+# Multi-model generation comparison
+$PY src/compare_models.py --engine grag \
+   --models "google/gemma-4-31B-it=12,zai-org/GLM-5.2=4,moonshotai/Kimi-K2.6=3"
+
+# Direct chat with the target agent (bypassing the harness)
+$PY src/target_client.py --chat
+
+# Level 2: profile the agent with the 4 judges
+$PY src/run_profiler.py --dataset results/level1_probes/dataset_ley_compose.json \
+   --judges "hf_router:google/gemma-4-31B-it,hf_router:zai-org/GLM-5.2,hf_router:moonshotai/Kimi-K2.6,groq:llama-3.3-70b-versatile" \
+   --iterations 5
+
+# Generic risk plugins (promptfoo) — no KB, templates or paraphrasing split
+# across models (gemma does most of it, GLM/Kimi only a couple, they're slow reasoners)
+$PY src/generic_probe_library.py --model "google/gemma-4-31B-it" --context "..."
+
+# Evasion: wrap an already-generated dataset before profiling (writes to
+# results/level2_profiler_evasion/, not results/level2_profiler/)
+$PY src/run_profiler.py --dataset results/level1_probes/dataset_ley_compose.json \
+   --evasion base64 --judges "groq:llama-3.3-70b-versatile" --iterations 1 --limit 8
+
+# Multi-turn scaffold (plumbing test, not a real strategy)
+$PY src/run_multiturn_demo.py --limit 5 --turns 2
+```
+
+Each script has more parameters (`--help` lists them); `src/universal_probe_library.py`
+supports a single engine, a custom KB, quantity/seed control, etc. — no need
+to memorize them, they're in each file's docstring.
+
+## Files (`src/`)
+
+- `contract.py` — durable contract (Document, KnowledgeHook, Probe, ProbeEngine).
+- `probe_library.py` — DeterministicEngine + composition (merge/dedup) + config/doc loading.
+- `engines_rag.py`, `engines_graphrag.py`, `engines_grag.py` — the 3 generation engines.
+- `kb.py`, `oracle.py` — example extractor for Ley 24.977 + honest scoring.
+- `config.py` — LLM provider registry (Groq, HuggingFace) + logprobs + target credentials.
+- `judge.py`, `profiler.py`, `run_profiler.py`, `report.py` — the Profiler (Level 2).
+- `target_client.py` — client for the target assistant (Alquimia runtime, SSE; `--chat` to talk to it directly; `ConversationSession` for the multi-turn scaffold).
+- `universal_probe_library.py`, `compare_models.py` — generation entrypoints (Level 1 and 1b).
+- `engines_generic.py`, `generic_probe_library.py` — generic risk plugins (promptfoo, no KB).
+- `evasion.py` — evasion layer (Base64/ROT13 implemented; see `config/evasion_strategies.yaml`).
+- `run_multiturn_demo.py` — multi-turn scaffold (plumbing, not a real attack).

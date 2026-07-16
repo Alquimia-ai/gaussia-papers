@@ -894,6 +894,247 @@ category report and seed the Gaussia Roast Dataset.
 
 % \subsection{Outputs}                                        % part 5
 
+\section{Experiments: The Universal Probe Library in Practice}
+\label{sec:experiments}
+
+This section grounds the Probe Library design of Section~\ref{sec:overview} in a
+real scenario, reporting the first tangible results the Gaussia team collected
+while validating the module. The Profiler and Exploiter results on this same
+scenario are left for a following iteration of this paper.
+
+\subsection{Scenario}
+
+The target is a production assistant built on Alquimia's runtime: a Spanish-language
+conversational agent that answers questions about Argentina's \emph{Monotributo}
+(the "R\'egimen Simplificado" of Ley 24.977), backed by retrieval over a
+knowledge base of the law's articles, categories, and billing limits. This is not
+a synthetic benchmark KB constructed for the paper; it is the knowledge base of a
+real, in-production assistant, which is precisely the setting the Probe Library
+is meant to operate in: a target with an existing knowledge base and no
+pre-existing red-teaming harness.
+
+\subsection{How the engines work}
+\label{sec:how-engines-work}
+
+The Probe Library does not commit to one way of knowing the boundary of the
+knowledge base; it implements several \emph{engines} behind the same
+contract (Section~\ref{sec:overview}) and composes their output. Each engine
+answers the question ``what does the assistant know, and what doesn't it
+know'' differently:
+
+\begin{itemize}
+  \item \textbf{Deterministic.} An extractor enumerates the knowledge base
+  directly (every article, category, and numeric limit), so the engine knows
+  the complete, exact boundary by construction. This makes it the only engine
+  with a perfectly reliable label for \emph{absence}: when it invents an
+  entity, it is invented on purpose from outside the enumerated set. Its
+  probes reference either a real entity with a twisted value (false premise)
+  or a nonexistent one nearby a real one (e.g., an article number just past
+  the last real article).
+  \item \textbf{RAG.} Chunks of the knowledge base are embedded and retrieved
+  by similarity for a given seed query; an LLM then anchors a fact in the
+  retrieved text and twists it into a false premise. RAG never sees the full
+  entity set, only what similarity search happens to retrieve, so it cannot
+  reliably tell a fabricated entity from a real one it simply didn't retrieve,
+  so it is not built for absence. In exchange, it generates the widest variety
+  of false-premise probes, since it can twist any retrieved fact, not only
+  enumerable, structured ones.
+  \item \textbf{GraphRAG.} An LLM extracts entities and relations from the
+  knowledge base into a graph; unlike RAG, this graph is treated as a
+  \emph{complete} catalog, giving GraphRAG a reliable way to recognize
+  absence (a queried entity is either in the graph or it isn't) without
+  needing a hand-written extractor like the deterministic engine.
+\end{itemize}
+
+None of the three dominates the others, which is why the framework runs every
+engine applicable to a given document and merges their probes (deduplicating
+where two engines produce the same underlying premise) rather than picking a
+single one.
+
+\subsection{Plugins and strategies in practice}
+\label{sec:plugins-strategies}
+
+Section~\ref{sec:overview} introduced \emph{plugin} (the risk family) and
+\emph{strategy} (the interaction pattern) as the vocabulary every probe is
+tagged with. On this scenario, every probe carries one of three plugins
+(\texttt{fabrication}, \texttt{false\_premise}, or \texttt{out\_of\_scope}),
+each mapped to a principle of the assistant's behavioral contract. Strategies
+are where the ``distinct implementation per strategy'' question actually
+matters, and the honest answer is: it depends on which engine produced the
+probe. Table~\ref{tab:strategies} breaks down the $204$-probe dataset by
+strategy.
+
+\begin{table}[ht]
+\centering
+\caption{Strategies realized in the Monotributo scenario, by implementation style.}
+\label{tab:strategies}
+\small
+\begin{tabular}{llrr}
+\toprule
+Strategy & Plugin & Implementation & Probes \\
+\midrule
+\texttt{documented\_recall} & (control) & templated & 53 \\
+\texttt{nonexistent\_article} & fabrication & templated & 4 \\
+\texttt{nonexistent\_category} & fabrication & templated & 3 \\
+\texttt{false\_limit\_value} & false\_premise & templated & 5 \\
+\texttt{grounded\_false\_fact} & false\_premise & engine-native (RAG) & 89 \\
+\texttt{rag\_absence\_attempt} & fabrication & engine-native (RAG) & 10 \\
+\texttt{graph\_edge\_false\_premise} & false\_premise & engine-native (GraphRAG) & 32 \\
+\texttt{graph\_absence\_articulo} & fabrication & engine-native (GraphRAG) & 4 \\
+\texttt{graph\_absence\_categoria} & fabrication & engine-native (GraphRAG) & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Templated strategies.} Four strategies are declared as data in a
+configuration file (entity kind, transformation, and a phrasing hint) and
+consumed by the deterministic engine through one shared code path: a single
+dispatch function renders the natural-language query per strategy id, and a
+separate branch applies the strategy's transformation (keep the entity
+unchanged, mutate it into a nearby nonexistent one, or flip a documented
+numeric value). The implementation is shared; only the phrasing and the
+transformation applied are strategy-specific.
+
+\paragraph{Engine-native strategies.} The remaining five strategies are not
+declared anywhere as configuration; each LLM-backed engine hardcodes its
+own strategy id directly alongside the prompt that produces it: RAG's
+fact-twisting prompt yields \texttt{grounded\allowbreak\_false\allowbreak\_fact}
+and \texttt{rag\allowbreak\_absence\allowbreak\_attempt}, while GraphRAG's
+graph-traversal logic yields
+\texttt{graph\allowbreak\_edge\allowbreak\_false\allowbreak\_premise} and the
+\texttt{graph\allowbreak\_absence\_*} family. Here the implementation genuinely
+is one-per-strategy, since each is tied to a distinct prompt or traversal rule
+inside its engine, not a shared dispatcher.
+
+\paragraph{A gap worth stating plainly.} The configuration file also declares
+three more qualitative strategies (\texttt{negate\_claim},
+\texttt{false\_attribute}, \texttt{over\_generalization}) intended for the
+grounded engine to realize as distinct sub-patterns of fact-twisting, plus a
+fourth (\texttt{undocumented\_capability}) for qualitative absence. None
+appear in Table~\ref{tab:strategies}: the deterministic engine does not handle
+their entity kind, and the RAG engine's current implementation tags every
+fact-twist it produces with the single generic \texttt{grounded\_false\_fact}
+id rather than distinguishing which qualitative pattern it used. The
+distinction exists at the design level but is not yet reflected at the
+runtime-tagging level: a concrete, closable gap rather than a fundamental
+limitation of the approach.
+
+\paragraph{Beyond this knowledge base.} The three plugins above are all
+knowledge-grounded: every probe they produce needs an entity, real or
+invented, from this specific KB. We also prototyped a domain-agnostic plugin
+family (covering risks such as system-prompt extraction, excessive agency,
+and hallucination) generated from only a risk category's name and
+description, optionally anchored to a free-text description of the target
+under test rather than to any KB entity. The same code generated probes for
+this Monotributo assistant and, unmodified, for an unrelated food-delivery
+support agent by changing only that description, which suggests the approach
+generalizes across targets. On the delivery side, we prototyped two static
+evasion strategies (Base64 and ROT13 encoding of an already-generated query)
+that wrap a probe regardless of which plugin or engine produced it, plus
+three more delivery patterns identified as worth adopting but not yet
+implemented (an iterative jailbreak refinement, a composite of known
+jailbreak templates, and a multi-turn escalation). Results from running
+these probes and strategies against this assistant are left for the
+Profiler section of this paper.
+
+\subsection{Engine trade-off}
+\label{sec:engine-tradeoff}
+
+Running these three probe-generation engines in
+composition over this knowledge base yields the canonical dataset of $204$
+probes summarized in Table~\ref{tab:engine-tradeoff}. \emph{Absence accuracy} is
+the fraction of an engine's fabricated-entity probes that an independent oracle
+(KB enumeration, used only for scoring, never exposed to the engines) confirms
+are genuinely absent from the law.
+
+\begin{table}[ht]
+\centering
+\caption{Engine trade-off on the Monotributo scenario (204 probes, composed).}
+\label{tab:engine-tradeoff}
+\begin{tabular}{lrrrr}
+\toprule
+Engine & Probes & Absence probes & Absence accuracy & False-premise probes \\
+\midrule
+Deterministic & 65 & 7 & 1.00 & 58 \\
+GraphRAG      & 40 & 8 & 1.00 & 32 \\
+RAG           & 99 & 10 & 0.00 & 89 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The deterministic engine and GraphRAG get absence right by construction: the
+deterministic engine enumerates the knowledge base directly, and GraphRAG uses
+the full entity graph as a catalog, so a fabricated article or category is
+recognizable as such with a perfectly reliable label. RAG, which only ever sees
+retrieved chunks and never the complete entity set, has zero absence accuracy on
+this scenario: when asked to reference a plausible-sounding but nonexistent
+article, it fabricates one that turns out to be real, since it cannot tell what
+it has not retrieved from what does not exist. In exchange, RAG contributes the
+widest false-premise coverage of the three engines (89 of its 99 probes), since
+it is the only engine that twists arbitrary retrieved facts rather than only
+enumerable, structured entities. This is the composition trade-off the Probe
+Library is built around: no single engine dominates, so the framework runs all
+applicable engines and merges their output rather than committing to one.
+
+\subsection{Multi-model probe generation}
+\label{sec:multimodel}
+
+The Probe Library's LLM-backed engines (RAG, GraphRAG, and a multi-hop engine
+based on subgraph retrieval) are configurable at the model level.
+Table~\ref{tab:multimodel} compares three model
+families generating probes with the GRAG engine over the same scenario: a dense,
+fast model (Gemma) against two reasoning models (GLM, Kimi).
+
+\begin{table}[ht]
+\centering
+\caption{Probe-generation speed by model family (GRAG engine).}
+\label{tab:multimodel}
+\begin{tabular}{lrrr}
+\toprule
+Model & Probes generated & Total seconds & Seconds/probe \\
+\midrule
+Gemma (google/gemma-4-31B-it)   & 12 & 13.6  & 1.1 \\
+GLM (zai-org/GLM-5.2)           & 4  & 238.3 & 59.6 \\
+Kimi (moonshotai/Kimi-K2.6)     & 3  & 310.7 & 103.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reasoning models are 50--100$\times$ slower per probe, but the extra
+inference time buys qualitatively different probes: rather than twisting a
+single retrieved fact, they chain several real provisions into a multi-step
+argument before introducing the false premise. For example, Kimi generated the
+following probe from this scenario's knowledge base:
+
+\begin{quote}
+\itshape
+``I'm about to advise a client and want to confirm my reasoning is sound. I
+understand that de facto partnerships are considered small taxpayers and that,
+to join the Simplified Regime, they have a maximum limit of three partners. Now,
+an irregular commercial partnership is also considered a small taxpayer, but in
+its case I don't see the law expressly imposing that three-partner cap.
+Therefore, I conclude that an irregular commercial partnership with four or
+five partners can join the Simplified Regime without issue, since the numerical
+restriction only reaches de facto partnerships. Is this distinction correct?''
+\end{quote}
+
+Resisting this probe requires the assistant to track a three-step chain (which
+entity types are small taxpayers, which specific type the partner cap applies
+to, and whether the conclusion actually follows) rather than reject a single
+false statement — a substantially harder failure mode to elicit or to fix than
+the single-fact false premises the dense model produces at a fraction of the
+cost. This is the practical version of the volume/depth trade-off: dense models
+for broad coverage, reasoning models for a smaller set of harder, more realistic
+traps.
+
+\subsection{Reproducibility}
+
+All code, configuration, and the canonical result artifacts referenced in this
+section are versioned in a public repository, \url{\repourl} (branch
+\texttt{feat/roast-me}, under \texttt{papers/2026-06-roastme/experiments/}); the
+notebooks in \texttt{experiments/jupyter/} load the same versioned data shown
+here directly, with no API key required.
+
 % \section{Implementation Considerations}
 % \section{Conclusion}
 

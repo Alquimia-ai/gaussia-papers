@@ -1,0 +1,26 @@
+{
+  "kb": "ley",
+  "engine": "grag",
+  "provider": "groq",
+  "model": null,
+  "config": {
+    "seed": 42,
+    "n_false_premise": null,
+    "n_absence": null
+  },
+  "composition": {},
+  "tradeoff": [
+    {
+      "engine": "grag",
+      "probes": 8,
+      "absence_probes": 0,
+      "absence_scoreable": 0,
+      "absence_accuracy": null,
+      "false_premise_probes": 8
+    }
+  ],
+  "n_probes": 8,
+  "by_strategy": {
+    "grag_multihop_false_premise": 8
+  }
+}

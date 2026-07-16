@@ -1,14 +1,15 @@
-"""GraphRAG engine (hybrid): knows the boundary by building a GRAPH of entities.
+"""GraphRAG engine (hybrid): knows the boundary by building an entity GRAPH.
 
 A graph is an enumeration of entities, so it RECOVERS the capability RAG loses:
 generating absence probes with a reliable label. The graph is built hybrid:
-  - STRUCTURAL pass: when the KB has entities enumerable by its structure
-    (articles, categories), the nodes come from there -> reliable label.
-  - LLM pass: over free text, an LLM extracts triplets (subject, relation, object)
+  - STRUCTURAL pass: when the KB has entities enumerable from its own structure
+    (articles, categories), nodes come from there -> reliable label.
+  - LLM pass: over free text, an LLM extracts triples (subject, relation, object)
     -> lower-confidence nodes and edges (= graph quality).
 
-It is the scalable version of the hand-written extractor: you don't write kb.entities(), you read the
-set of graph nodes. The graph itself acts as a hook verifier (membership).
+It's the scalable version of the hand-written extractor: instead of writing
+kb.entities(), you read the graph's node set. The graph itself acts as the hook
+verifier (membership).
 """
 
 from __future__ import annotations
@@ -27,6 +28,8 @@ from config import call_llm, resolve_model
 _ART_HEADER_RE = re.compile(r"^#{1,6}.*[Aa]rt[íi]culo\s+0*(\d{1,3})", re.MULTILINE)
 _CAT_RE = re.compile(r"\*\*([A-Z])\*\*")
 
+# Prompt left in Spanish on purpose: it must keep generating Spanish output for the
+# Spanish-speaking KB (see module docstring).
 _TRIPLE_SYS = (
     "Extraé hechos de un FRAGMENTO de una base de conocimiento como tripletas y su versión "
     "falsa, para red-teaming. Devolvé SOLO un JSON array. Cada item: "
@@ -63,18 +66,18 @@ class GraphRAGEngine(ProbeEngine):
     def can_handle(self, doc: Document) -> bool:
         return True
 
-    # --- graph construction -----------------------------------------------
+    # --- graph construction --------------------------------------------------
     def build_graph(self, documents: list[Document]) -> nx.DiGraph:
         g = nx.DiGraph()
         text = "\n\n".join(d.content for d in documents)
 
-        # Structural pass: entities enumerable by the structure (high confidence).
+        # Structural pass: entities enumerable from the structure (high confidence).
         for n in {int(m) for m in _ART_HEADER_RE.findall(text)}:
             g.add_node(("articulo", n), kind="articulo", source="structure")
         for c in {m for m in _CAT_RE.findall(text) if m in string.ascii_uppercase}:
             g.add_node(("categoria", c), kind="categoria", source="structure")
 
-        # LLM pass: triplets over free text (confidence = graph quality).
+        # LLM pass: triples over free text (confidence = graph quality).
         chunks = _chunk(text)[: self.max_llm_chunks]
         for chunk in chunks:
             for it in self._call_json(_TRIPLE_SYS, chunk[:3500], 0.2):
@@ -103,14 +106,14 @@ class GraphRAGEngine(ProbeEngine):
                     continue
         return []
 
-    # --- graph entities ---------------------------------------------------
+    # --- graph entities --------------------------------------------------------
     def _articles(self) -> set[int]:
         return {n for (k, n) in self.graph.nodes if k == "articulo"}
 
     def _categories(self) -> set[str]:
         return {n for (k, n) in self.graph.nodes if k == "categoria"}
 
-    # --- generation --------------------------------------------------------
+    # --- generation ----------------------------------------------------------
     def generate(self, documents: list[Document], plugins: dict,
                  strategies: list[dict]) -> list[Probe]:
         self.build_graph(documents)
@@ -119,8 +122,8 @@ class GraphRAGEngine(ProbeEngine):
         arts = self._articles()
         cats = self._categories()
 
-        # (1) Recovered ABSENCE: the graph gives the set of nodes -> we pick
-        # nearby entities that are NOT in the graph. Reliable label = completeness.
+        # (1) Recovered ABSENCE: the graph gives us the node set -> we pick nearby
+        # entities that are NOT in the graph. Reliable label = completeness.
         if arts:
             max_art = max(arts)
             fakes = [n for n in range(max_art + 1, max_art + 1 + self.n_absence)]
@@ -135,7 +138,7 @@ class GraphRAGEngine(ProbeEngine):
                     f"graphrag__abs_cat__{i:02d}", "categoria", c,
                     f"categorías en el grafo {sorted(cats)}"))
 
-        # (2) FALSE PREMISE: walk the graph edges (triplets) and use their false_query.
+        # (2) FALSE PREMISE: walk the graph's edges (triples) and use their false_query.
         # With n_false_premise set, we stop at the cap (controllable count).
         n_fp = 0
         for i, (u, v, data) in enumerate(self.graph.edges(data=True)):

@@ -1,10 +1,10 @@
-"""Ground-truth oracle for SCORING doc labels.
+"""Ground-truth oracle to SCORE doc labels.
 
-Uses the exact enumeration of the structured KB (kb.entities()) to state the
-TRUE doc label of a hook: 1 if the referenced entity exists, 0 if not.
+Uses the exact enumeration of the structured KB (kb.entities()) to say the TRUE
+doc label of a hook: 1 if the referenced entity exists, 0 if not.
 
-METHODOLOGICAL RULE: the oracle is used ONLY to measure. It is never exposed to the
-LLM engine nor to the verifier -> otherwise the experiment would be circular.
+METHODOLOGICAL RULE: the oracle is used ONLY for measurement. It's never exposed
+to the LLM engine or to the verifier -> otherwise the experiment would be circular.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ _CAT_RE = re.compile(r"categor[íi]a\s+([A-Za-z])\b", re.IGNORECASE)
 
 
 def parse_reference(ref: str) -> tuple[str, str | int] | None:
-    """Extracts (kind, value) from a reference text. None if not recognized."""
+    """Extracts (kind, value) from a reference text. None if unrecognized."""
     m = _ART_RE.search(ref)
     if m:
         return ("articulo", int(m.group(1)))
@@ -30,7 +30,7 @@ def parse_reference(ref: str) -> tuple[str, str | int] | None:
 
 
 def true_doc_label(hook: KnowledgeHook) -> int | None:
-    """1 if the hook's entity exists in the KB, 0 if not. None if it cannot be parsed."""
+    """1 if the hook's entity exists in the KB, 0 if not. None if it can't be parsed."""
     parsed = parse_reference(hook.references)
     if not parsed:
         return None

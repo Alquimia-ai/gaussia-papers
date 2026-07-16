@@ -1,22 +1,66 @@
-# Secretos y entornos
+# Secrets and environments
 .env
 .venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# El PDF del paper GRAG es material de referencia (copyright), no se versiona.
-# Está citado por URL en el README y en engines_grag.py.
+# The GRAG paper PDF is reference material (copyright), not versioned.
+# Cited by URL in the README and in engines_grag.py.
 Aclanthology
 *.pdf
 
-# results/ es scratch de tus propias corridas: se ignora por default. PERO se versionan los
-# datasets CANÓNICOS que el notebook carga por defecto, para que funcione tras clonar el repo
-# sin API key, y el reporte de la comparativa multi-modelo.
+# HTML reports are regenerated from the JSON artifacts; not versioned.
+*.html
+
+# results/ is scratch for your own runs: ignored by default. BUT the CANONICAL
+# artifacts are versioned, so the notebooks load real data right after cloning,
+# with no API key needed.
 results/*
-!results/dataset_ley_compose.json
-!results/dataset_ley_grag.json
-!results/dataset_faq_compose.json
-!results/dataset_ley_deterministic.json
-!results/compare_grag.json
-!results/compare_grag.html
+!results/README.md
+
+!results/level1_probes/
+results/level1_probes/*
+!results/level1_probes/dataset_ley_compose.json
+!results/level1_probes/summary_ley_compose.json
+!results/level1_probes/dataset_ley_deterministic.json
+!results/level1_probes/summary_ley_deterministic.json
+!results/level1_probes/dataset_ley_grag.json
+!results/level1_probes/summary_ley_grag.json
+!results/level1_probes/dataset_faq_compose.json
+!results/level1_probes/summary_faq_compose.json
+
+!results/level1_model_comparison/
+results/level1_model_comparison/*
+!results/level1_model_comparison/compare_grag.json
+!results/level1_model_comparison/archive/
+results/level1_model_comparison/archive/*
+!results/level1_model_comparison/archive/compare_grag.json
+
+!results/level1_probes_generic/
+results/level1_probes_generic/*
+!results/level1_probes_generic/dataset_generic.json
+!results/level1_probes_generic/summary_generic.json
+!results/level1_probes_generic/dataset_generic_example_delivery.json
+
+!results/level2_profiler/
+results/level2_profiler/*
+!results/level2_profiler/transcripts_ley_compose.json
+!results/level2_profiler/profile_ley_compose_groq-llama-3-3-70b-versatile.json
+!results/level2_profiler/profile_ley_compose_hf-router-google-gemma-4-31b-it.json
+!results/level2_profiler/profile_ley_compose_hf-router-moonshotai-kimi-k2-6.json
+!results/level2_profiler/profile_ley_compose_hf-router-zai-org-glm-5-2.json
+!results/level2_profiler/weakness_evolution_ley_compose.json
+
+!results/level2_profiler_evasion/
+results/level2_profiler_evasion/*
+!results/level2_profiler_evasion/transcripts_ley_compose__base64.json
+!results/level2_profiler_evasion/transcripts_ley_compose__rot13.json
+!results/level2_profiler_evasion/profile_ley_compose__base64_groq-llama-3-3-70b-versatile.json
+!results/level2_profiler_evasion/profile_ley_compose__rot13_groq-llama-3-3-70b-versatile.json
+!results/level2_profiler_evasion/weakness_evolution_ley_compose__base64.json
+!results/level2_profiler_evasion/weakness_evolution_ley_compose__rot13.json
+
+!results/level2_profiler_multiturn/
+results/level2_profiler_multiturn/*
+!results/level2_profiler_multiturn/transcripts_multiturn_ley_compose.json

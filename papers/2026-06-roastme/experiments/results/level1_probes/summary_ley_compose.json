@@ -1,0 +1,64 @@
+{
+  "kb": "ley",
+  "engine": "compose",
+  "provider": "groq",
+  "model": null,
+  "config": {
+    "seed": 42,
+    "n_false_premise": null,
+    "n_absence": null
+  },
+  "composition": {
+    "engines": [
+      "deterministic",
+      "rag",
+      "graphrag"
+    ],
+    "per_engine": {
+      "deterministic": 65,
+      "rag": 99,
+      "graphrag": 40
+    },
+    "raw_total": 204,
+    "deduped": 0,
+    "final_total": 204
+  },
+  "tradeoff": [
+    {
+      "engine": "deterministic",
+      "probes": 65,
+      "absence_probes": 7,
+      "absence_scoreable": 7,
+      "absence_accuracy": 1.0,
+      "false_premise_probes": 58
+    },
+    {
+      "engine": "graphrag",
+      "probes": 40,
+      "absence_probes": 8,
+      "absence_scoreable": 8,
+      "absence_accuracy": 1.0,
+      "false_premise_probes": 32
+    },
+    {
+      "engine": "rag",
+      "probes": 99,
+      "absence_probes": 10,
+      "absence_scoreable": 10,
+      "absence_accuracy": 0.0,
+      "false_premise_probes": 89
+    }
+  ],
+  "n_probes": 204,
+  "by_strategy": {
+    "false_limit_value": 5,
+    "grounded_false_fact": 89,
+    "nonexistent_article": 4,
+    "nonexistent_category": 3,
+    "documented_recall": 53,
+    "rag_absence_attempt": 10,
+    "graph_absence_articulo": 4,
+    "graph_absence_categoria": 4,
+    "graph_edge_false_premise": 32
+  }
+}

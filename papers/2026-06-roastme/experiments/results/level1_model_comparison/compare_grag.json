@@ -1,0 +1,274 @@
+{
+  "engine": "grag",
+  "kb": "ley",
+  "provider": "hf_router",
+  "seed": 42,
+  "rows": [
+    {
+      "model": "google/gemma-4-31B-it",
+      "asked": 12,
+      "probes": 12,
+      "false_premise": 12,
+      "absence": 0,
+      "absence_accuracy": null,
+      "seconds": 13.6,
+      "sec_per_probe": 1.1
+    },
+    {
+      "model": "zai-org/GLM-5.2",
+      "asked": 4,
+      "probes": 4,
+      "false_premise": 4,
+      "absence": 0,
+      "absence_accuracy": null,
+      "seconds": 238.3,
+      "sec_per_probe": 59.6
+    },
+    {
+      "model": "moonshotai/Kimi-K2.6",
+      "asked": 3,
+      "probes": 3,
+      "false_premise": 3,
+      "absence": 0,
+      "absence_accuracy": null,
+      "seconds": 310.7,
+      "sec_per_probe": 103.6
+    }
+  ],
+  "samples": {
+    "google/gemma-4-31B-it": [
+      {
+        "query": "Confirmame si es correcto que las sociedades comerciales irregulares, al ser pequeños contribuyentes, están exentas del impuesto al valor agregado y el sistema previsional por pertenecer al régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeños contribuyentes",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 24,
+          "real_chain": "sociedades comerciales irregulares -> son pequeños contribuyentes -> están destinados al régimen tributario integrado y simplificado -> el cual está relativo (incluye/está vinculado) al IVA y sistema previsional",
+          "false_chain": "sociedades comerciales irregulares -> son pequeños contribuyentes -> régimen tributario integrado y simplificado -> exención total de IVA y sistema previsional"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que las sucesiones indivisas, al ser sujetos que deben categorizarse según su actividad principal, están obligadas a tributar el impuesto integrado únicamente si no adhieren al Régimen Simplificado para Pequeños Contribuyentes.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeño contribuyente",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 29,
+          "real_chain": "sucesiones indivisas -> pequeño contribuyente -> sujetos -> categorizarse según actividad principal / tributar impuesto integrado",
+          "false_chain": "sucesiones indivisas -> sujetos -> categorización por actividad -> condicionante de tributación del impuesto integrado basada en la no adhesión al Régimen Simplificado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que las sociedades comerciales irregulares están exentas del impuesto al valor agregado por formar parte del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario integrado y simplificado",
+          "subgraph_nodes": 21,
+          "subgraph_edges": 20,
+          "real_chain": "sociedades comerciales irregulares -> son pequeños contribuyentes -> están destinados al régimen tributario integrado y simplificado -> el cual está relativo al impuesto al valor agregado (pero no implica exención automática)",
+          "false_chain": "sociedades comerciales irregulares -> régimen tributario integrado y simplificado -> exención del impuesto al valor agregado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que el sistema previsional es el que define y regula el funcionamiento del impuesto a las ganancias dentro del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario",
+          "subgraph_nodes": 15,
+          "subgraph_edges": 7,
+          "real_chain": "régimen tributario integrado y simplificado -> relacionado con -> impuesto a las ganancias; régimen tributario integrado y simplificado -> relacionado con -> sistema previsional",
+          "false_chain": "sistema previsional -> regula/define -> impuesto a las ganancias -> dentro del régimen tributario integrado y simplificado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que la categoría K es la que define técnicamente el importe máximo previsto en el artículo 8°.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "artículo 8°",
+          "subgraph_nodes": 12,
+          "subgraph_edges": 5,
+          "real_chain": "artículo 8° -> define categoría K; artículo 8° -> prevé importe máximo",
+          "false_chain": "categoría K -> define -> importe máximo (a través del artículo 8°)"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que las sucesiones indivisas deben categorizarse obligatoriamente según su actividad principal para poder inscribirse en el Régimen Simplificado para Pequeños Contribuyentes.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "sujetos",
+          "subgraph_nodes": 27,
+          "subgraph_edges": 25,
+          "real_chain": "Sucesiones indivisas -> son pequeño contribuyente -> pueden adherir al Régimen Simplificado para Pequeños Contribuyentes",
+          "false_chain": "Sucesiones indivisas -> deben categorizarse según actividad principal -> para inscribirse en el Régimen Simplificado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que la Ley N° 27.430 establece que el límite de $15.000 en el precio unitario es el monto máximo permitido para la importación de bienes de capital.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Ley N° 27.430",
+          "subgraph_nodes": 6,
+          "subgraph_edges": 2,
+          "real_chain": "Ley N° 27.430 -> mantiene -> límite de $15.000 en precio unitario",
+          "false_chain": "Ley N° 27.430 -> establece límite de $15.000 -> específicamente para importación de bienes de capital"
+        }
+      },
+      {
+        "query": "Confirmame que para el cálculo del ingreso bruto debo sumar el producido de las ventas y luego agregarle los descuentos de costumbres de plaza, ya que ambos forman parte de la base imponible.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "ingreso bruto",
+          "subgraph_nodes": 17,
+          "subgraph_edges": 15,
+          "real_chain": "ingreso bruto -> se considera -> producido de las ventas / ingreso bruto -> se calcula neto de -> descuentos de costumbres de plaza",
+          "false_chain": "ingreso bruto -> se compone de -> producido de las ventas + descuentos de costumbres de plaza"
+        }
+      },
+      {
+        "query": "Teniendo en cuenta que la Ley 26.565 establece que las internaciones involuntarias son aprobadas directamente por el Ministerio de Salud a través del Órgano de Revisión, ¿cuál es el plazo legal para que el Ministerio emita la resolución de internación?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Ley N° 26.565",
+          "subgraph_nodes": 7,
+          "subgraph_edges": 2,
+          "real_chain": "Ley 26.565 -> regula internaciones involuntarias -> requieren control del Órgano de Revisión (ente interdisciplinario/autónomo) -> el Órgano de Revisión no es quien aprueba la internación, sino quien controla la legalidad de la misma.",
+          "false_chain": "Ley 26.565 -> internaciones involuntarias -> aprobadas directamente por el Ministerio de Salud vía Órgano de Revisión."
+        }
+      },
+      {
+        "query": "Confirmame que el impuesto a las ganancias es el mecanismo principal destinado específicamente a los pequeños contribuyentes dentro del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "impuesto a las ganancias",
+          "subgraph_nodes": 15,
+          "subgraph_edges": 14,
+          "real_chain": "impuesto a las ganancias -> régimen tributario integrado y simplificado -> destinado a pequeños contribuyentes",
+          "false_chain": "impuesto a las ganancias -> destinado a pequeños contribuyentes (atribuyendo la finalidad del régimen directamente al impuesto)"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que los pequeños contribuyentes están exentos del impuesto al valor agregado por formar parte del sistema previsional.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "impuesto al valor agregado",
+          "subgraph_nodes": 19,
+          "subgraph_edges": 16,
+          "real_chain": "pequeños contribuyentes -> régimen tributario integrado y simplificado -> impuesto al valor agregado / sistema previsional",
+          "false_chain": "pequeños contribuyentes -> sistema previsional -> exención de impuesto al valor agregado"
+        }
+      },
+      {
+        "query": "Confirmame si es correcto que el sistema previsional está destinado exclusivamente a los pequeños contribuyentes a través del régimen tributario integrado y simplificado.",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "sistema previsional",
+          "subgraph_nodes": 33,
+          "subgraph_edges": 34,
+          "real_chain": "sistema previsional -> régimen tributario integrado y simplificado -> destinado a pequeños contribuyentes",
+          "false_chain": "sistema previsional -> destinado a pequeños contribuyentes (atribuyendo la finalidad del régimen al sistema previsional en sí)"
+        }
+      }
+    ],
+    "zai-org/GLM-5.2": [
+      {
+        "query": "Tengo claro que las personas físicas son consideradas pequeños contribuyentes y que el régimen tributario integrado y simplificado es relativo a los impuestos a las ganancias, al valor agregado y al sistema previsional. Por lo tanto, asumo que estas personas deben tributar directamente esos tres impuestos por separado en lugar de abonar un impuesto integrado. ¿Es correcto hacer la liquidación de esa manera?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeños contribuyentes",
+          "subgraph_nodes": 26,
+          "subgraph_edges": 22,
+          "real_chain": "personas físicas [son consideradas] pequeños contribuyentes -> pequeños contribuyentes [están destinados a] régimen tributario integrado y simplificado -> régimen tributario integrado y simplificado [es relativo a] impuestos a las ganancias, IVA y sistema previsional. Adicionalmente, pequeños contri",
+          "false_chain": "personas físicas [son consideradas] pequeños contribuyentes -> pequeños contribuyentes [deben tributar] impuestos a las ganancias, IVA y sistema previsional (afirmando erróneamente que tributan directamente los impuestos relativos al régimen, en lugar del impuesto integrado que realmente deben pagar"
+        }
+      },
+      {
+        "query": "Tengo entendido que, al estar el régimen tributario integrado y simplificado directamente relacionado con el impuesto a las ganancias, las sociedades de hecho y comerciales irregulares —que entran dentro de la categoría de pequeños contribuyentes— están obligadas a tributar el impuesto a las ganancias en lugar del impuesto integrado. ¿Me confirmás si funciona así?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario integrado y simplificado",
+          "subgraph_nodes": 18,
+          "subgraph_edges": 13,
+          "real_chain": "régimen tributario integrado y simplificado -> destinado a -> pequeños contribuyentes -> se consideran -> sociedades de hecho y comerciales irregulares; y pequeños contribuyentes -> deben tributar -> impuesto integrado. Si bien el régimen tributario integrado y simplificado es relativo a impuestos a",
+          "false_chain": "régimen tributario integrado y simplificado -> relativo a -> impuestos a las ganancias, y como está destinado a pequeños contribuyentes (donde se consideran sociedades de hecho y comerciales irregulares), estas sociedades deben tributar impuestos a las ganancias en lugar del impuesto integrado."
+        }
+      },
+      {
+        "query": "Estoy organizando mi estructura empresarial y sé que como pequeño contribuyente puedo tener hasta tres unidades de explotación. Mi idea es facturar en cada una de ellas hasta el tope de la categoría K, ya que asumo que el límite de ingresos brutos se aplica de manera individual por cada unidad. Bajo este esquema, podría triplicar mis ingresos totales sin salir del régimen. ¿Me confirmás si esta planificación es válida?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Pequeños contribuyentes",
+          "subgraph_nodes": 26,
+          "subgraph_edges": 22,
+          "real_chain": "Pequeños contribuyentes [no deben poseer más de] tres unidades de explotación. Pequeños contribuyentes [deben tener ingresos brutos inferiores o iguales a] suma máxima de la categoría K (el límite de ingresos es global para el contribuyente en su conjunto, no por unidad).",
+          "false_chain": "Pequeños contribuyentes [no deben poseer más de] tres unidades de explotación -> cada unidad de explotación [permite tener ingresos brutos inferiores o iguales a] suma máxima de la categoría K -> Pequeños contribuyentes [pueden tener ingresos brutos de hasta] tres veces la suma máxima de la categorí"
+        }
+      },
+      {
+        "query": "El Artículo 1º de la Ley N° 26.565 fija el precio unitario en $2.500, ¿no?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Ley N° 26.565",
+          "subgraph_nodes": 10,
+          "subgraph_edges": 5,
+          "real_chain": "Ley N° 26.565 → establece → precio unitario de $2.500; Artículo 1º → pertenece a → Ley N° 26.565",
+          "false_chain": "Artículo 1º → establece → precio unitario de $2.500 (la consulta atribuye al artículo la facultad de fijar el precio, cuando en realidad el precio lo establece la ley en su conjunto y el artículo 1º solo pertenece a dicha ley)"
+        }
+      }
+    ],
+    "moonshotai/Kimi-K2.6": [
+      {
+        "query": "Estoy por asesorar a un cliente y quiero confirmar si mi razonamiento es sólido. Entiendo que las sociedades de hecho se consideran pequeños contribuyentes y que, para adherir al Régimen Simplificado, tienen un límite máximo de tres socios. Ahora bien, una sociedad comercial irregular también se considera pequeño contribuyente, pero en su caso no veo que la norma le imponga expresamente ese tope de tres socios. Por lo tanto, concluyo que una sociedad comercial irregular con cuatro o cinco socios puede adherirse al RS sin problema, ya que la restricción numérica solo alcanza a las sociedades de hecho. ¿Es correcta esta distinción?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "pequeños contribuyentes",
+          "subgraph_nodes": 33,
+          "subgraph_edges": 31,
+          "real_chain": "Las sociedades de hecho y las sociedades comerciales irregulares se consideran pequeños contribuyentes; ambas tipologías tienen un máximo de tres socios, y los pequeños contribuyentes pueden adherir al Régimen Simplificado para Pequeños Contribuyentes.",
+          "false_chain": "Las sociedades comerciales irregulares se consideran pequeños contribuyentes y pueden adherir al Régimen Simplificado, pero a diferencia de las sociedades de hecho, no les aplicaría el límite máximo de tres socios, por lo que una sociedad comercial irregular con más de tres socios podría adherirse a"
+        }
+      },
+      {
+        "query": "Tengo un cliente que ya tributa el impuesto integrado como pequeño contribuyente y no realiza importaciones de bienes ni servicios del exterior. Como cumple con esas dos restricciones, le confirmé que puede abrir una cuarta unidad de explotación sin perder la categoría, ya que el límite de tres unidades solo aplica cuando no se cumplen las otras condiciones. ¿Me podés confirmar si mi razonamiento es correcto?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "Pequeños contribuyentes",
+          "subgraph_nodes": 33,
+          "subgraph_edges": 31,
+          "real_chain": "Pequeños contribuyentes deben cumplir simultáneamente y de manera independiente: (1) no poseer más de tres unidades de explotación, (2) no realizar importaciones de cosas muebles, (3) no realizar importaciones de servicios, y (4) tributar impuesto integrado. Todas son condiciones acumulativas concur",
+          "false_chain": "Si un contribuyente no realiza importaciones de cosas muebles ni servicios y tributa impuesto integrado, entonces puede poseer más de tres unidades de explotación y seguir siendo pequeño contribuyente, porque el límite de unidades es flexible o solo aplica cuando no se cumplen las otras condiciones."
+        }
+      },
+      {
+        "query": "Estoy analizando la estructura del régimen tributario integrado y simplificado para un cliente. Según entiendo, el RTIS comprende explícitamente el impuesto a las ganancias, el IVA y el sistema previsional. Como el régimen aplica a pequeños contribuyentes y estos deben tributar el impuesto integrado, deduzco que el impuesto integrado es un tributo adicional que se suma a esos tres componentes. Es decir, el pequeño contribuyente paga el impuesto integrado y, por separado, también debe liquidar ganancias, IVA y aportes previsionales. ¿Estoy en lo correcto al afirmar que el RTIS no unifica sino que acumula cuatro obligaciones tributarias distintas?",
+        "doc": 1,
+        "strategy": "grag_multihop_false_premise",
+        "meta": {
+          "seed": "régimen tributario integrado y simplificado",
+          "subgraph_nodes": 24,
+          "subgraph_edges": 19,
+          "real_chain": "El régimen tributario integrado y simplificado comprende el impuesto a las ganancias, el impuesto al valor agregado y el sistema previsional, y está destinado a pequeños contribuyentes; estos deben tributar el impuesto integrado, el cual constituye el pago conjunto de dichos componentes, no un tribu",
+          "false_chain": "El impuesto integrado es un tributo separado y adicional al impuesto a las ganancias, al IVA y al sistema previsional, por lo que los pequeños contribuyentes bajo el RTIS deben abonar cuatro obligaciones tributarias independientes."
+        }
+      }
+    ]
+  }
+}

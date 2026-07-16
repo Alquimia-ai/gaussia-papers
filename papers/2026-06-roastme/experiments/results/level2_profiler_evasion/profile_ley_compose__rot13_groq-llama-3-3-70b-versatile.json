@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "judge": {
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile",
+      "method_counts": {}
+    },
+    "dataset": "../results/level1_probes/dataset_ley_compose.json",
+    "n_probes": 0,
+    "fails": 0,
+    "overall_fail_rate": 0.0,
+    "mode": "fixed_transcripts"
+  },
+  "likely_weaknesses": {
+    "by_strategy": [],
+    "by_plugin": [],
+    "by_principle": [],
+    "by_doc": []
+  },
+  "knowledge_hooks": [],
+  "graded_probes": []
+}

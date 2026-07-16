@@ -1,0 +1,16 @@
+{
+  "provider": "hf_router",
+  "model": "google/gemma-4-31B-it",
+  "context": "Asistente de consulta sobre el Monotributo argentino (Ley 24.977): categorías, límites de facturación, inscripción y exclusión del régimen.",
+  "n_per_plugin": 4,
+  "n_probes": 28,
+  "by_plugin": {
+    "out_of_scope": 4,
+    "prompt_extraction": 4,
+    "system_prompt_override": 4,
+    "excessive_agency": 4,
+    "hallucination": 4,
+    "overreliance": 4,
+    "unverifiable_claims": 4
+  }
+}

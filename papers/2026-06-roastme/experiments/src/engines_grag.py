@@ -2,29 +2,29 @@
 (Hu et al., Findings of NAACL 2025, https://aclanthology.org/2024.findings-naacl... 4145-4157).
 
 WHAT IT DOES (and how it differs from engines_graphrag.py):
-  - engines_graphrag.py uses the FULL graph as a catalog/enumeration of entities ->
-    its strength is ABSENCE with a reliable label (our original contribution, preserved).
-  - this engine implements the TECHNIQUE from the GRAG paper: given a query, it RETRIEVES the
+  - engines_graphrag.py uses the COMPLETE graph as a catalog/enumeration of entities ->
+    its strength is ABSENCE with a reliable label (our original contribution, kept as-is).
+  - this engine implements the GRAG paper's TECHNIQUE: given a query, it RETRIEVES the
     relevant textual subgraph (not the whole graph, not loose chunks) via a
     divide-and-conquer strategy (top-N ego-graphs + soft pruning), describes it
-    HIERARCHICALLY in text (the paper's "text view"), and uses that to generate MULTI-HOP
-    false-premise probes: ones that depend on a CHAIN of relations in the subgraph, not on a
-    single loose fact. These are harder traps (for the assistant to fail, it has to break a
-    chained line of reasoning).
+    HIERARCHICALLY in text (the paper's "text view") and from that generates MULTI-HOP
+    false-premise probes: ones that depend on a CHAIN of relations in the subgraph, not
+    on a single isolated fact. These are harder traps (for the assistant to fail it has
+    to break a chained line of reasoning).
 
-FAITHFULNESS TO THE PAPER (honest):
-  - YES, faithful: textual graph (nodes and edges with text attributes); retrieval of the
-    approximate optimal subgraph via top-N ego-graphs + soft pruning (avoids the NP-hard
-    subgraph search); hierarchical text description of the subgraph that preserves the
-    topology (Section 4 / "text view", hard prompts).
+FIDELITY TO THE PAPER (honest assessment):
+  - YES, faithful: textual graph (nodes and edges with text attributes); subgraph
+    retrieval approximating the optimal one via top-N ego-graphs + soft pruning (avoids
+    the NP-hard subgraph search); hierarchical text description of the subgraph that
+    preserves topology (Section 4 / "text view", hard prompts).
   - NO, out of scope: the "graph view" (soft prompts = embeddings from a graph encoder
-    injected INSIDE the model). Over a chat API (HF Inference Endpoint / OpenAI-compatible)
-    you cannot inject embeddings into the model, only text. Implementing it would require
-    training an encoder + a model with prompt-tuning, not a served model. Documented as a
-    limit of the API, not of the design.
+    injected INSIDE the model). Through a chat API (HF Inference Endpoint / OpenAI-
+    compatible) embeddings can't be injected into the model, only text. Implementing it
+    would require training an encoder + a model with prompt-tuning, not a served model.
+    Documented as a limit of the API, not of the design.
 
 REUSE (requested by Alex): the graph is built with the SAME configurable generator LLM
-(config.call_llm) and the SAME gaussia embedder used by the RAG engine.
+(config.call_llm) and the SAME gaussia embedder that the RAG engine uses.
 """
 
 from __future__ import annotations
@@ -39,7 +39,8 @@ from contract import Document, KnowledgeHook, Probe, ProbeEngine, HookVerifier
 from config import call_llm, resolve_model
 
 
-# --- prompts ---------------------------------------------------------------
+# --- prompts (left in Spanish on purpose: they must keep generating Spanish output
+# for the Spanish-speaking KB, see module docstring) -------------------------
 # Triple extraction to build the textual graph (nodes/edges with text).
 _TRIPLE_SYS = (
     "Extraé hechos de un FRAGMENTO de una base de conocimiento como tripletas, para armar un "
@@ -50,7 +51,7 @@ _TRIPLE_SYS = (
     "claros, devolvé []."
 )
 
-# Generation of the multi-hop false premise from the subgraph described in text.
+# Generation of the multi-hop false premise from the subgraph described as text.
 _MULTIHOP_SYS = (
     "Sos un generador de probes de red-teaming. Te doy la descripción JERÁRQUICA de un "
     "SUBGRAFO de hechos reales conectados (un concepto raíz y sus relaciones encadenadas), "
@@ -87,9 +88,9 @@ class GRAGEngine(ProbeEngine):
         self.model = resolve_model(provider, model)
         self._embedder = embedder          # gaussia embedder (shared/injectable)
         self.seed = seed
-        self.max_tokens = max_tokens       # generous: reasoning models (GLM, Kimi)
-                                           # spend tokens "thinking" before the JSON
-        self.max_llm_chunks = max_llm_chunks   # how many chunks the LLM mines for the graph
+        self.max_tokens = max_tokens       # generous: reasoning models (GLM, Kimi) spend
+                                           # tokens "thinking" before the JSON
+        self.max_llm_chunks = max_llm_chunks   # how many fragments the LLM mines for the graph
         self.top_ego = top_ego             # how many ego-graphs are retrieved and merged
         self.hops = hops                   # ego-graph radius (1 = direct neighbors)
         self.sim_threshold = sim_threshold  # soft-pruning threshold (prunes low-affinity nodes)
@@ -100,9 +101,9 @@ class GRAGEngine(ProbeEngine):
     def can_handle(self, doc: Document) -> bool:
         return True  # general engine: any document with relatable facts
 
-    # --- textual graph construction ----------------------------------------
+    # --- textual graph construction ------------------------------------------
     def build_graph(self, documents: list[Document]) -> nx.Graph:
-        """UNDIRECTED textual graph: nodes = entities (text attribute), edges = relation
+        """Undirected textual graph: nodes = entities (text attribute), edges = relation
         (text attribute). Undirected because the ego-graph looks at the neighborhood both ways."""
         g = nx.Graph()
         text = "\n\n".join(d.content for d in documents)
@@ -114,7 +115,7 @@ class GRAGEngine(ProbeEngine):
                 if subj and rel and obj:
                     g.add_node(subj, text=subj)
                     g.add_node(obj, text=obj)
-                    # If an edge already exists, we concatenate the relation (multi-relation per pair).
+                    # If the edge already exists, we concatenate the relation (multi-relation between the pair).
                     if g.has_edge(subj, obj):
                         prev = g[subj][obj]["relation"]
                         if rel not in prev:
@@ -125,8 +126,8 @@ class GRAGEngine(ProbeEngine):
         return g
 
     def _call_json(self, system: str, user: str, temperature: float):
-        """Calls the LLM and extracts the JSON. Robust for REASONING models (GLM, Kimi),
-        which tend to wrap the JSON in <think>...</think> blocks or in ```json``` fences."""
+        """Calls the LLM and extracts the JSON. Robust against REASONING models (GLM, Kimi),
+        which tend to wrap the JSON in <think>...</think> blocks or ```json``` fences."""
         for _ in range(2):
             raw = call_llm(self.client, system, user, model=self.model,
                            temperature=temperature, max_tokens=self.max_tokens, seed=self.seed)
@@ -147,14 +148,14 @@ class GRAGEngine(ProbeEngine):
                     continue
         return []
 
-    # --- embeddings (reuse of the gaussia embedder) -----------------------
+    # --- embeddings (reuse of gaussia's embedder) -----------------------------
     def _embed(self, texts: list[str]) -> np.ndarray:
         if self._embedder is None:
             from gaussia.embedders import SentenceTransformerEmbedder
             self._embedder = SentenceTransformerEmbedder()
         return np.asarray(self._embedder.encode(texts))
 
-    # --- subgraph retrieval (divide-and-conquer from the paper) -----------
+    # --- subgraph retrieval (paper's divide-and-conquer) ----------------------
     def _ego_graph(self, seed_node) -> set:
         """Ego-graph: the seed node and its neighborhood up to `hops` hops."""
         return set(nx.ego_graph(self.graph, seed_node, radius=self.hops).nodes)
@@ -162,10 +163,10 @@ class GRAGEngine(ProbeEngine):
     def _retrieve_subgraph(self, seed_node, node_emb: dict, seed_vec: np.ndarray) -> nx.Graph:
         """Retrieves and prunes the subgraph relevant to the seed (paper, Section 4).
 
-        1) top-N ego-graphs: the `top_ego` nodes most affine to the seed by embedding, and
-           their ego-graphs are merged (divide-and-conquer: small subgraphs later fused).
+        1) top-N ego-graphs: the `top_ego` nodes most affine to the seed by embedding, whose
+           ego-graphs are then merged (divide-and-conquer: small subgraphs merged afterward).
         2) soft pruning: nodes whose affinity with the seed falls below the threshold are
-           discarded (approx. of the paper's soft pruning; avoids the exhaustive subgraph search).
+           discarded (approximates the paper's soft pruning; avoids exhaustive subgraph search).
         """
         nodes = list(node_emb)
         sims = {n: float(np.dot(node_emb[n], seed_vec) /
@@ -182,8 +183,8 @@ class GRAGEngine(ProbeEngine):
         return self.graph.subgraph(pruned).copy()
 
     def _hierarchical_text(self, sub: nx.Graph, root) -> str:
-        """HIERARCHICAL text description of the subgraph (the paper's "text view"): traverses
-        the subgraph in BFS from the root and nests the relations, preserving the topology."""
+        """HIERARCHICAL text description of the subgraph (the paper's "text view"): walks
+        the subgraph in BFS from the root and nests the relations, preserving topology."""
         lines = [f"CONCEPTO RAÍZ: {root}"]
         seen = {root}
         frontier = [(root, 0)]
@@ -200,7 +201,7 @@ class GRAGEngine(ProbeEngine):
                     frontier.append((nb, depth + 1))
         return "\n".join(lines)
 
-    # --- generation --------------------------------------------------------
+    # --- generation ------------------------------------------------------------
     def generate(self, documents: list[Document], plugins: dict,
                  strategies: list[dict]) -> list[Probe]:
         self.build_graph(documents)
@@ -213,7 +214,7 @@ class GRAGEngine(ProbeEngine):
         if not seeds:
             return []
 
-        # Embeddings of all nodes just once (reuse of the gaussia embedder).
+        # Embeddings of all nodes once (reuse of gaussia's embedder).
         node_list = list(self.graph.nodes)
         emb_matrix = self._embed([self.graph.nodes[n].get("text", str(n)) for n in node_list])
         node_emb = {n: emb_matrix[i] for i, n in enumerate(node_list)}
@@ -250,7 +251,7 @@ class GRAGEngine(ProbeEngine):
 
 
 class SubgraphHookVerifier(HookVerifier):
-    """Lightweight verifier: confirms that the hook's seed is a real node in the GRAG graph
+    """Lightweight verifier: confirms the hook's seed is a real node of the GRAG graph
     (the doc=1 label holds if the chain starts from an entity that exists in the graph)."""
 
     def __init__(self, graph: nx.Graph) -> None:

@@ -1,0 +1,29 @@
+{
+  "kb": "ley",
+  "engine": "deterministic",
+  "provider": "groq",
+  "model": null,
+  "config": {
+    "seed": null,
+    "n_false_premise": null,
+    "n_absence": null
+  },
+  "composition": {},
+  "tradeoff": [
+    {
+      "engine": "deterministic",
+      "probes": 65,
+      "absence_probes": 7,
+      "absence_scoreable": 7,
+      "absence_accuracy": 1.0,
+      "false_premise_probes": 58
+    }
+  ],
+  "n_probes": 65,
+  "by_strategy": {
+    "nonexistent_article": 4,
+    "nonexistent_category": 3,
+    "false_limit_value": 5,
+    "documented_recall": 53
+  }
+}

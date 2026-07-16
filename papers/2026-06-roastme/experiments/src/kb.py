@@ -1,15 +1,15 @@
-"""Example extractor for Law 24.977 (Monotributo).
+"""Example extractor for Ley 24.977 (Monotributo).
 
 In Roast Me, the "extractor" is what the user provides to enable the deterministic
 engine over a structured KB: it enumerates the real entities (knowledge boundary) so
-that the doc labels are perfect. This module is ONE example extractor, not part of the
+that doc labels are perfect. This module is ONE example extractor, not part of the
 framework: for another KB you write another one with the same signature
     entities(documents) -> {"articulos": [...], "categorias": [...], "limites": [...]}
 
-The rest of the system only sees these sets and `retrieve()`, never the raw storage
--> this preserves the principle that the KB lives inside the Probe Library.
+The rest of the system only ever sees these sets and `retrieve()`, never the raw
+storage -> keeps the principle that the KB lives inside the Probe Library.
 
-The law's .md files live in data/ley_24977/ (copied inside the experiment so it is
+The law's .md files live in data/ley_24977/ (copied into the experiment so it's
 self-contained).
 """
 
@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent  # project root (this file lives in src/)
 KB_DIR = HERE / "data" / "ley_24977"
 
 # Monotributo categories defined by Art. 8 of the Annex: A through K.
@@ -50,8 +50,8 @@ def category_exists(letter: str) -> bool:
 
 
 # Real documented limits (curated from the KB text: arts. 2, 8, 11).
-# Each one carries its real value and the source article -> lets the flip_value
-# strategy invert a TRUE fact while the hook still points to doc=1.
+# Each one carries its real value and source article -> lets the flip_value
+# strategy invert a TRUE fact and have the hook point to doc=1.
 DOCUMENTED_LIMITS: list[dict] = [
     {"id": "unidades_explotacion", "value": 3, "unit": "unidades de explotación",
      "article": 2, "phrase": "máximo de unidades de explotación permitidas"},
@@ -67,10 +67,10 @@ DOCUMENTED_LIMITS: list[dict] = [
 
 
 def entities(documents=None) -> dict:
-    """All entities of the KB that strategies can specialize.
+    """All KB entities that the strategies can particularize.
 
-    Accepts `documents` (ignored) to satisfy the extractor(documents) signature that the
-    deterministic engine expects; the enumeration is derived from the law's files.
+    Accepts `documents` (ignored) to satisfy the extractor(documents) signature
+    expected by the deterministic engine; the enumeration is derived from the law's files.
     """
     return {
         "articulos": sorted(DOCUMENTED_ARTICLES),
@@ -80,7 +80,7 @@ def entities(documents=None) -> dict:
 
 
 def retrieve(article_n: int) -> str | None:
-    """Text of an article (for grounded mode). None if it does not exist."""
+    """Text of an article (for grounded mode). None if it doesn't exist."""
     if article_n not in DOCUMENTED_ARTICLES:
         return None
     for name in (f"Anexo_Articulo_{article_n:02d}.md", f"Articulo_{article_n:02d}_Ley.md"):

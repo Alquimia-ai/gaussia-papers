@@ -1,16 +1,16 @@
-"""Universal Probe Library: config/document loading, deterministic engine and composition.
+"""Universal Probe Library: config/document loading, deterministic engine, and composition.
 
 The contract lives in contract.py. Here:
   - load_config()        -> plugins + strategies from YAML
   - load_documents()     -> any .md (file or folder) as list[Document]
-  - ley_extractor()      -> example extractor for Law 24.977 (enables the deterministic engine)
-  - DeterministicEngine  -> baseline engine: frontier by ENUMERATION -> perfect doc labels
-  - merge_probes/generate_composed -> engine composition (NOT cascade) with dedup
+  - ley_extractor()      -> example extractor for Ley 24.977 (enables the deterministic engine)
+  - DeterministicEngine  -> baseline engine: boundary by ENUMERATION -> perfect doc labels
+  - merge_probes/generate_composed -> composition of engines (NOT a cascade) with dedup
 
-DeterministicEngine knows the knowledge frontier by exact enumeration (via the
-extractor the user provides) -> it is the only one that handles absence with a perfect label.
+DeterministicEngine knows the knowledge boundary via exact enumeration (through the
+extractor the user provides) -> it's the only one that does absence with a perfect label.
 The RAG and GraphRAG engines (engines_rag.py, engines_graphrag.py) implement other ways of
-knowing that frontier, behind the same contract.
+knowing that boundary, behind the same contract.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import yaml
 import kb
 from contract import Document, KnowledgeHook, Probe, ProbeEngine
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent  # project root (this file lives in src/)
 CONFIG_DIR = HERE / "config"
 
 # Deterministic pools to mutate real entities into nearby nonexistent ones.
@@ -31,7 +31,7 @@ _FAKE_ARTICLE_POOL = [74, 88, 99, 120]
 _FAKE_CATEGORY_POOL = ["M", "N", "Z"]
 
 
-# --- input loading ---------------------------------------------------------
+# --- input loading -----------------------------------------------------------
 def load_config(config_dir: Path = CONFIG_DIR) -> tuple[dict, list[dict]]:
     plugins = yaml.safe_load((config_dir / "plugins.yaml").read_text(encoding="utf-8"))
     strategies = yaml.safe_load((config_dir / "strategies.yaml").read_text(encoding="utf-8"))
@@ -39,12 +39,20 @@ def load_config(config_dir: Path = CONFIG_DIR) -> tuple[dict, list[dict]]:
     return pmap, strategies["strategies"]
 
 
+def load_generic_config(config_dir: Path = CONFIG_DIR) -> list[dict]:
+    """Generic risk plugins (config/generic_plugins.yaml), consumed by
+    GenericRiskEngine (engines_generic.py). Its own vocabulary, distinct from
+    load_config() (plugins/strategies tied to the KB) so as not to clash with those names."""
+    data = yaml.safe_load((config_dir / "generic_plugins.yaml").read_text(encoding="utf-8"))
+    return data["generic_plugins"]
+
+
 def load_documents(path: str | Path, *, doc_id: str | None = None,
                    kind: str | None = None, structured: bool = False) -> list[Document]:
-    """Load .md as Documents. `path` can be a file or a folder.
+    """Loads .md as Documents. `path` can be a file or a folder.
 
-    A folder is concatenated into a single Document (the full KB); a standalone file
-    is a Document. Generic: works for the law (folder) or the FAQ (file).
+    A folder is concatenated into a single Document (the whole KB); a lone file is
+    one Document. Generic: works for the law (folder) or the FAQ (single file).
     """
     p = Path(path)
     if p.is_dir():
@@ -58,7 +66,7 @@ def load_documents(path: str | Path, *, doc_id: str | None = None,
 
 
 def load_kb_documents() -> list[Document]:
-    """Shortcut: Law 24.977 as a structured Document (kind='ley')."""
+    """Shortcut: Ley 24.977 as a single structured Document (kind='ley')."""
     return load_documents(kb.KB_DIR, doc_id="ley_24977", kind="ley", structured=True)
 
 
@@ -105,8 +113,8 @@ def _llm_phrasing(groq_client, strategy: dict, base_query: str) -> str:
 
 # --- engine 1: deterministic (baseline) -------------------------------------
 class DeterministicEngine(ProbeEngine):
-    """Structured docs: knowledge frontier by enumeration -> perfect doc labels.
-    Only acts if an extractor is provided (that is its condition to apply)."""
+    """Structured docs: knowledge boundary by enumeration -> perfect doc labels.
+    Only acts if an extractor is provided (that's its condition for applying)."""
 
     name = "deterministic"
 
@@ -193,19 +201,19 @@ class DeterministicEngine(ProbeEngine):
         return probes
 
 
-# --- engine composition (NOT cascade) ---------------------------------------
-# Label reliability order: on an overlap the engine with the more reliable label
-# wins. The deterministic one enumerates -> perfect label -> always wins.
+# --- engine composition (NOT a cascade) -------------------------------------
+# Label reliability order: in an overlap, the engine whose label is more reliable
+# wins. The deterministic engine enumerates -> perfect label -> always wins.
 _LABEL_PRIORITY = ["deterministic", "graphrag", "grounded_llm", "grounded_fact", "rag", "llm"]
 
 
 def _dedup_key(p: Probe):
     """Key to detect the SAME false premise produced by two engines.
 
-    Dedup only in the comparable case: false premise about a NUMERIC VALUE of an
-    article. Key = (article, real_value). Absence and qualitative facts do not
+    Only dedups the comparable case: false premise about a NUMERIC VALUE of an
+    article. Key = (article, real_value). Absence and qualitative facts never
     collide between engines -> None and all are kept. Conservative heuristic:
-    we prefer not to over-merge rather than lose a legitimate probe.
+    we'd rather under-merge than lose a legitimate probe.
     """
     import re
     if p.engine == "deterministic" and p.hook.kind == "limite":
@@ -222,11 +230,12 @@ def _dedup_key(p: Probe):
 
 
 def merge_probes(probes: list[Probe], priority: list[str] | None = None) -> tuple[list[Probe], int]:
-    """Merges probes from several engines and deduplicates overlaps.
+    """Merges probes from several engines and dedups overlaps.
 
-    Returns (final_probes, n_dedup). On a key clash the engine with the more reliable
-    label wins; the winner records the discarded ones in meta['deduped_over']. Dedup
-    only operates BETWEEN distinct engines (two probes from the same engine are never merged).
+    Returns (final_probes, n_dedup). On a key collision, the engine with the more
+    reliable label wins; the winner records the discarded ones in
+    meta['deduped_over']. Dedup only happens BETWEEN different engines (two probes
+    from the same engine are never merged).
     """
     priority = priority or _LABEL_PRIORITY
     rank = {name: i for i, name in enumerate(priority)}
@@ -274,10 +283,10 @@ def to_records(probes: list[Probe]) -> list[dict]:
 
 
 def from_records(records: list[dict]) -> list[Probe]:
-    """Reconstructs Probes from a dataset's JSON (inverse of to_records).
+    """Rebuilds Probes from a dataset's JSON (inverse of to_records).
 
     Lets the notebook LOAD a frozen canonical dataset instead of regenerating it with
-    the LLM: identical results on every open, with no API key needed.
+    the LLM: identical results on every run, no API key needed.
     """
     probes: list[Probe] = []
     for r in records:
@@ -295,6 +304,6 @@ def from_records(records: list[dict]) -> list[Probe]:
 
 
 def load_dataset(path: str | Path) -> list[Probe]:
-    """Loads a frozen probe dataset (results/dataset_*.json)."""
+    """Loads a frozen probes dataset (results/level1_probes/dataset_*.json)."""
     import json
     return from_records(json.loads(Path(path).read_text(encoding="utf-8")))
