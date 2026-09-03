@@ -24,3 +24,7 @@ researches/
 *.env
 .DS_Store
 generate_benchmark.py
+
+# Python
+__pycache__/
+*.pyc
