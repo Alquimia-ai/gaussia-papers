@@ -7,10 +7,18 @@ than in the task.
 
 Temperature is 0 and the verdict is a single word, so a run is reproducible.
 
-Harness note: gpt-oss models emit reasoning before content, so a small max_tokens
-returns an empty message rather than an error. All 288 rows came back blank at
-max_tokens=16. The verdict needs room for the reasoning to finish first, hence
-max_tokens=512 with reasoning_effort="low" (about 55 completion tokens per call).
+Harness notes on reasoning, which differ per model family and are easy to get wrong:
+
+- gpt-oss always reasons before content, so a small max_tokens returns an empty
+  message rather than an error. All 288 rows came back blank at max_tokens=16.
+  reasoning_effort cannot be turned off; "none" is rejected. About 55 completion
+  tokens per call at "low".
+- qwen3.8 on Groq does the opposite: it does not reason by default (6 tokens per
+  call), and passing reasoning_effort="low" switches reasoning on (93 tokens).
+
+So reasoning_effort="low" is the setting that has both families reasoning, which is
+what makes the comparison between them like for like. --no-reasoning omits the
+parameter, which leaves gpt-oss unchanged and turns qwen's reasoning off.
 
 Usage:
     python run_judge.py                                  # canonical format
@@ -111,8 +119,17 @@ def parse_verdict(text: str) -> str | None:
     return min(hits)[1]
 
 
-def judge_one(client: OpenAI, model: str, case: dict, fmt: str, prompt: str = "guided", retries: int = 4) -> dict:
+def judge_one(
+    client: OpenAI,
+    model: str,
+    case: dict,
+    fmt: str,
+    prompt: str = "guided",
+    reasoning: bool = True,
+    retries: int = 4,
+) -> dict:
     trace = render(case, fmt)
+    extra = {"reasoning_effort": "low"} if reasoning else {}
     last_error = ""
     for attempt in range(retries):
         try:
@@ -120,7 +137,7 @@ def judge_one(client: OpenAI, model: str, case: dict, fmt: str, prompt: str = "g
                 model=model,
                 temperature=0,
                 max_tokens=512,
-                reasoning_effort="low",
+                **extra,
                 messages=[
                     {"role": "system", "content": PROMPTS[prompt]},
                     {"role": "user", "content": USER.format(claim=case["claim"], trace=trace)},
@@ -205,6 +222,11 @@ def main() -> None:
     parser.add_argument("--model", default="openai/gpt-oss-120b")
     parser.add_argument("--prompt", default="guided", choices=[*PROMPTS, "all"])
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument(
+        "--no-reasoning",
+        action="store_true",
+        help="omit reasoning_effort; no effect on gpt-oss, turns qwen's reasoning off",
+    )
     opts = parser.parse_args()
 
     load_env()
@@ -227,7 +249,12 @@ def main() -> None:
         for fmt in formats:
             t0 = time.time()
             with ThreadPoolExecutor(max_workers=opts.workers) as pool:
-                rows = list(pool.map(lambda c: judge_one(client, opts.model, c, fmt, prompt), cases))
+                rows = list(
+                    pool.map(
+                        lambda c: judge_one(client, opts.model, c, fmt, prompt, not opts.no_reasoning),
+                        cases,
+                    )
+                )
             key = f"{prompt}/{fmt}"
             summaries[key] = summarize(rows)
             summaries[key]["elapsed_s"] = round(time.time() - t0, 1)
@@ -243,7 +270,8 @@ def main() -> None:
 
     RESULTS_DIR.mkdir(exist_ok=True)
     slug = re.sub(r"[^a-z0-9]+", "-", opts.model.lower()).strip("-")
-    path = RESULTS_DIR / f"judge_{slug}_{opts.prompt}_{opts.format}.json"
+    suffix = "_noreasoning" if opts.no_reasoning else ""
+    path = RESULTS_DIR / f"judge_{slug}_{opts.prompt}_{opts.format}{suffix}.json"
     path.write_text(
         json.dumps(
             {
@@ -251,7 +279,7 @@ def main() -> None:
                 "model": opts.model,
                 "temperature": 0,
                 "max_tokens": 512,
-                "reasoning_effort": "low",
+                "reasoning_effort": None if opts.no_reasoning else "low",
                 "system_prompts": PROMPTS,
             },
                 "summaries": summaries,

@@ -19,8 +19,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage[hidelinks]{hyperref}
 
-% Resolve assets/figures whether compiled from the repo root or this folder.
-% Copy this line into each paper, pointing the first path at the paper's folder.
+% Resolve assets/figures whether compiled from the repo root or this folder
 \graphicspath{{papers/2026-09-accountability/}{./}}
 
 % Brand header (logo + wordmark on the left, date on the right)
@@ -64,10 +63,11 @@
 \rfoot{\thepage}
 
 % Metadata
-\title{Your Paper Title Here}
+% TODO(title): working title. Decide before the first full draft.
+\title{Accountability: Measuring Respect for Human Oversight\\ in Tool-Using Assistants}
 \author{
-  Author One \\
-  \texttt{author1@email.com}
+  Axel Fritz \\
+  \texttt{axel.fritz@alquimia.ai}
 }
 % Date is shown in the header instead of under the title (see \paperdate above)
 \date{}
@@ -82,56 +82,290 @@
 
 % The abstract is REQUIRED for every Gaussia paper. Do not remove it.
 \begin{abstract}
-A concise summary of the paper: the problem addressed, the proposed approach,
-key results, and implications for the Gaussia framework.
+% TODO(abstract): write last, once the sections are settled. It has to carry:
+% the gap (no metric answers "did this assistant stay accountable to its
+% supervisors?"); why plan adherence and role adherence cannot be transformed into
+% it; the two metrics, the diagnostics and the admissibility flag; the design rule
+% that no denominator is decided by a model; and the empirical result that a
+% relevance reranker cannot verify a claim against a tool trace.
+Placeholder.
 \end{abstract}
 
-\keywords{keyword one, keyword two, keyword three}
+\keywords{% TODO(keywords)
+human oversight, accountability, agentic evaluation, escalation policy,
+tool traces, LLM evaluation}
 
+% ============================================================
 \section{Introduction}
+% ============================================================
+% TODO(intro): the failure is often in what did NOT happen - no escalation
+% request, no disclosure. A metric that looks for something wrong in the response
+% text finds nothing, because the response may be exemplary. The absence is the
+% finding.
 
-Motivate the problem. Why does AI evaluation need this metric or approach?
-What gap does it fill in the current Gaussia framework?
+\subsection{Four Ways to Fail Accountability}
+% TODO: not escalating, saturating oversight, evading governance, acting
+% non-attributably. Motivate each with a one-line scenario.
 
+\subsection{Why Existing Metrics Do Not Cover This}
+% TODO: agentic measures deviation from an expected plan, which is independent of
+% whether permission was needed. role_adherence is broader than oversight, so its
+% non-adherence verdicts would charge unrelated failures to the most serious
+% dimension in the set. Neither carries an escalation policy.
+% GROUNDING TO VERIFY: allowed_tools is NOT on pygaussia develop; it lives on the
+% unmerged branch feat/tool-scope-violation. Check before making the
+% "a gate needs three states and allowed_tools expresses two" argument.
+
+\subsection{What This Paper Delivers}
+% TODO: two metrics, a set of diagnostics, one dataset-level admissibility flag.
+% State up front that saturation is not measurable from a conversation trace and
+% is therefore reported as a limitation rather than proxied.
+
+\subsection{Contributions}
+% TODO: list. Candidates:
+% 1. A data contract for oversight: policy, approval events, actor.
+% 2. OversightCompliance, deterministic, with the zero-executed-actions rule that
+%    stops refusal from scoring perfect.
+% 3. ActionDisclosure with model-independent denominators.
+% 4. An empirical boundary between retrieval and verification, with a benchmark.
+
+% ============================================================
 \section{Related Work}
+% ============================================================
 
-Discuss existing approaches and how your proposal differs or improves upon them.
+\subsection{Benchmarks for Human Oversight}
+% TODO: SteerBench. The numbers that matter for us: models over-brake in 28.1% of
+% opportunities and act without permission in 1.0%. Consequence: a metric that only
+% counts unpermitted actions will read zero almost always.
 
-\section{Methodology}
+\subsection{Reviewer Load and the Limits of More Oversight}
+% TODO: reviewer reliability degrades past capacity, producing an inverted U in the
+% escalation rate. More supervision can mean less safety.
 
-Describe your approach in detail. Include formal definitions and notation
-and mathematical formulations.
+\subsection{Divergence Between Reported Plan and Executed Action}
+% TODO: SPADE (25-57% depending on model) and artifact-faithfulness work (46-68% of
+% failed traces end in a response contradicting a verifier the agent itself called).
 
-\subsection{Formal Definition}
+\subsection{Negation in Neural Retrieval}
+% TODO: NevIR and ExcluIR. Sets up Section 7: our result is the same phenomenon
+% measured on structured tool results instead of prose.
 
-% Example: define your metric formally
-% \begin{equation}
-%   M(x) = \frac{1}{N} \sum_{i=1}^{N} f(x_i)
-% \end{equation}
+\subsection{Positioning}
+% TODO: the works above are benchmarks with their own scenarios and evaluation
+% loops. The contribution here is translating those concerns into reusable
+% dataset-level metrics over conversation and tool traces the operator already has.
 
-% Rename this section as appropriate, e.g. Results, Experiments, Case Study.
-\section{Evaluation}
+% ============================================================
+\section{Scope and Unit of Evaluation}
+% ============================================================
+% TODO: the unit is the session, because the policy is declared once per session
+% and an approval granted in one turn may be consumed by a later action. No
+% STREAM_BATCHES support. Severity is reported per stratum, never pooled.
 
-If applicable, present experimental results: datasets used, baselines compared
-against, and analysis.
+% ============================================================
+\section{The Data Contract}
+% ============================================================
+% TODO: this section answers the third of the three revisions requested on the
+% proposal. Every field explicit: type, required or optional, what its absence
+% means, and which metric consumes it. Not inferable from examples.
 
-% Example table
-% \begin{table}[h]
-%   \centering
-%   \caption{Experimental Results}
-%   \begin{tabular}{lcc}
-%     \toprule
-%     Method & Score & Runtime \\
-%     \midrule
-%     Baseline & 0.72 & 1.2s \\
-%     Ours & \textbf{0.89} & 0.8s \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
+\subsection{The Oversight Policy}
+% TODO: three tool states - free, gated, forbidden - plus approvers and severity.
+% Argue why a two-state allow-list cannot express a gate: the tool is permitted
+% and using it without asking is still a violation.
 
+\subsection{Approval Events}
+% TODO: for_step, granted, granted_at_qa, by, role, source, covers. Approver roles
+% are required so a user requesting an action cannot count as the authority
+% approving it. Declared and inferred modes are never averaged.
+
+\subsection{The Tool Trace}
+% TODO: already exists as agentic.tools_used. Only actor is new, and it is optional.
+
+\subsection{Absent, Empty, and Uncovered}
+% TODO: the three cases that must not collapse. An absent field is not evaluable.
+% An empty approvals list means nothing was requested, which is evaluable. A tool
+% not named in the policy is uncovered and leaves both numerator and denominator.
+
+% ============================================================
+\section{OversightCompliance}
+% ============================================================
+% TODO: deterministic, set arithmetic, no model in the loop.
+
+\subsection{Classifying Executed Actions}
+
+\subsection{Five Checks per Gated Action}
+% TODO: NO_ESCALATION, POST_HOC, DEFIED, REUSED, UNAUTHORIZED_APPROVER. An action
+% failing at least one check counts once; the per-check counts are reported
+% separately so the operator sees which check is failing.
+
+\subsection{Score and Severity Strata}
+% TODO: compliance = 1 - violations / executed gated actions, per stratum. Higher
+% is better, consistent with PLR.
+
+\subsection{Zero Executed Actions Is Not Compliance}
+% TODO: the single most important rule in the definition. An assistant that
+% refuses everything executes no gated action, commits no violation, and would
+% otherwise score perfect. Zero executed actions returns NOT EVALUABLE.
+% Connect to MiDojo, where utility and security are reported separately for the
+% same reason, and to SteerBench's mirror scenarios, which a metric library cannot
+% build because it does not generate data.
+
+\subsection{Forbidden Tools Are Reported, Not Averaged}
+
+\subsection{Bundling Diagnostics}
+% TODO: what survives of the saturation shape after it was dropped. Escalation
+% mismatch across severity strata, and approvals covering several actions. These
+% are diagnostics and not scores, because there is no correct escalation
+% distribution and how much friction a deployment tolerates is a judgement about
+% its own domain.
+
+\subsection{Aggregation Across Sessions}
+% TODO: micro-averaging. All actions from all sessions pooled per stratum, because
+% what matters is how many actions ran without permission, not how many sessions
+% had a problem. Report N alongside.
+
+% ============================================================
+\section{ActionDisclosure}
+% ============================================================
+
+\subsection{Why a Claim-Count Denominator Fails}
+% TODO: this section answers the second revision requested on the proposal. If the
+% denominator is "verifiable claims extracted by a model", two runs over the same
+% session can disagree, and an assistant that says less has a smaller denominator -
+% saying nothing scores perfect, which is the paralysis hole again.
+
+\subsection{The Rule: No Model Decides a Denominator}
+% TODO: state it once, here, and refer back to it. Denominators come from the
+% trace, the policy and the turn count. The judge only returns a verdict on an item
+% whose count is already fixed.
+
+\subsection{Omission}
+% TODO: undisclosed executed actions over executed policy-relevant actions.
+
+\subsection{Fabrication}
+% TODO: turns containing at least one claim the trace refutes, over assistant
+% turns. Reported separately from omission and never averaged with it: concealing
+% and lying are different failures.
+
+\subsection{The Borderline Counter}
+% TODO: not a third failure. Vague turns are already penalised by omission, so
+% counting them again would double-charge. What the counter records is how many
+% disclosure decisions fell near the judge's threshold, which says how much of the
+% score rests on a debatable call.
+
+\subsection{Judge Modes and the Fallback Protocol}
+% TODO: threshold on a confidence score, with a three-label judge as plan B.
+% Startup probe: five attempts if the operator asked for logprobs, none if they
+% asked for the discrete mode. One mode for the whole run, never interleaved, and
+% the report states which mode ran and whether it was a fallback, because the two
+% are different estimators and must not be compared or averaged.
+% GROUNDED: Groq exposes no logprobs on any current model (verified 2026-09-03 on
+% gpt-oss-120b, gpt-oss-20b, qwen3.8-27b). llama-3.3-70b is no longer offered.
+
+% ============================================================
+\section{Attributability as an Admissibility Flag}
+% ============================================================
+% TODO: not a metric. INCOMPLETE, NOT_ATTRIBUTABLE, DECLARED_ONLY, AUDITABLE,
+% NOT_EVALUABLE, computed over the dataset without averaging. A declared actor is
+% not an authenticated identity; real auditability needs signatures, which is a
+% protocol concern rather than a model-evaluation one.
+% CHECK: the boltzmann-brain paper merged feat/actor-identity on 2026-08-31
+% ("an actor has a form, and a record names who assisted"). Read it before writing
+% this section; the vocabulary may already be settled there.
+
+% ============================================================
+\section{Experiments: Verifying a Claim Against a Tool Trace}
+% ============================================================
+% TODO: the one section that is already measured. Source material is complete in
+% experiments/contradiction_checker/README.md; this section is a condensation of
+% it, not new work.
+
+\subsection{Why This Experiment Decides a Design Question}
+% TODO: ActionDisclosure needs to compare a claim against a structured result. The
+% framework already ships ContradictionChecker, used by the regulatory metric.
+% Note that it asks the right question - QwenReranker's default instruction is
+% explicitly about SUPPORTS/CONTRADICTS - so the question under test is whether a
+% relevance-trained reranker can answer it.
+
+\subsection{Benchmark Construction}
+% TODO: 288 cases, 8 domains, 82 tools, three groups, five failure modes at 32
+% each, five trace renderings. Labels follow from construction.
+
+\subsection{The Reranker}
+% TODO: AUC 0.91-0.96 separating true from false claims, so there is real signal
+% and the strong hypothesis is refuted. At the component's own 0.6 threshold it
+% still certifies 51-80 of 160 false claims as true, and the misses concentrate in
+% action_failed and wrong_value - the two modes that matter most here.
+% The 0.9653 case makes the point in one line.
+
+\subsection{Two Judges, Three Prompts}
+% TODO: 97-100% for gpt-oss-120b and 98-99% for qwen3.8-27b under the minimal
+% prompt. Stripping the prompt costs 0-5 cases of 160, and qwen holds with
+% reasoning off at six completion tokens, so neither the prompt nor the model size
+% explains the gap.
+
+\subsection{Two Labels Destroy Information the Score Has}
+% TODO: unrelated pairs score near zero, so the reranker does detect that nothing
+% matches; the component then maps everything below threshold to CONTRADICTS. For
+% accountability, absence of evidence and contradiction must never collapse: one is
+% a finding, the other is a gap in the data.
+
+\subsection{What This Means Beyond This Paper}
+% TODO: the boundary is between retrieval and verification, not between a good and
+% a bad tool. The regulatory metric's contradiction step is on the wrong side of it
+% today. Say this plainly and without overclaiming - it is one benchmark.
+
+\subsection{Reproducibility}
+% TODO: point at the experiment folder. Include the two harness findings, which
+% cost a run each: an empty message with no error when max_tokens is too small for
+% a reasoning model, and a zero-width space inside the verdict word in 7 of 1440
+% calls.
+
+% ============================================================
+\section{Implementation Considerations}
+% ============================================================
+% TODO: what an implementer needs. Validation rejects unknown keys in
+% ground_truth_agentic today, so adding fields means updating validation.
+% Parameter-level gates ("transfer > $10,000") are out of v1; policies are keyed by
+% tool name. Judge cost is one call per claim or one per turn, configurable.
+
+% ============================================================
+\section{Limitations}
+% ============================================================
+% TODO: state all of these plainly.
+% 1. The client-declared policy can itself be wrong. We measure against what was
+%    declared, not against what was right.
+% 2. The trace is written by the same system under evaluation. An unlogged action
+%    does not exist for the metric. This is exactly the attributability problem.
+% 3. Uncovered tools leave the denominator, so their omission is invisible.
+%    Mitigated by reporting policy coverage, not solved.
+% 4. The denominator is executed actions, so the metric detects faults and does not
+%    reward restraint.
+% 5. Reviewer saturation is not measured; it needs approval latency and reviewer
+%    capacity, which a conversation does not carry.
+% 6. Actor identity is declared, not cryptographically verified.
+% 7. Evaluation is session-scoped.
+% 8. The experiment benchmark is constructed and clean; its numbers are a ceiling,
+%    not a field estimate.
+% 9. No dataset exists yet with policy, approvals and trace together, so the two
+%    metrics are specified but not measured end to end.
+
+% ============================================================
+\section{Future Work}
+% ============================================================
+% TODO: a condition language for parameter-level gates; a continuous judge score
+% once a logprob-capable provider is in place; and the dataset that would let the
+% two metrics be evaluated rather than only defined.
+
+% ============================================================
 \section{Conclusion}
+% ============================================================
 
-Summarize contributions and outline future work.
+% ============================================================
+\section*{Open Source}
+% ============================================================
+% TODO: point at the benchmark and scripts in experiments/.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

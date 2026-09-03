@@ -48,8 +48,10 @@ one format only is a result about that format.
 # reranker, as the framework configures it (Qwen3-Reranker-0.6B, threshold 0.6)
 python run_reranker.py --format all
 
-# judge, three system prompts x five formats
+# judge, three system prompts x five formats, two models
 python run_judge.py --prompt all --format all --workers 8
+python run_judge.py --model qwen/qwen3.8-27b --prompt all --format all --workers 6
+python run_judge.py --model qwen/qwen3.8-27b --prompt all --format all --no-reasoning
 ```
 
 Both are scored against the benchmark's own labels, never against each other.
@@ -62,7 +64,10 @@ reranker receives.
 
 ## Results
 
-Detection of the 160 false claims. Each cell is the range over the five formats.
+Detection of the 160 false claims. Each cell is the range over the five trace formats.
+
+First, gpt-oss-120b under each prompt, to isolate how much the prompt
+contributes:
 
 | Failure mode (32 each) | reranker | judge `guided` | judge `labels` | judge `minimal` |
 |---|---|---|---|---|
@@ -75,7 +80,19 @@ Detection of the 160 false claims. Each cell is the range over the five formats.
 | A correct / 64 | 61-64 | 63-64 | 62-63 | 61-63 |
 | C correct / 64 | **0** | 63-64 | 63-64 | 63 |
 
-Three findings.
+And under the `minimal` prompt only, the hardest setting, across two model families:
+
+| Failure mode (32 each) | reranker | gpt-oss-120b | qwen3.8-27b | qwen3.8-27b, no reasoning |
+|---|---|---|---|---|
+| `opposite_state` | 22-28 | 31-32 | 32 | 28-32 |
+| `opposite_count` | 18-28 | 31-32 | 32 | 28-32 |
+| `denies_own_action` | 17-26 | 32 | 30-32 | 26-32 |
+| `action_failed` | **7-15** | 29-32 | 31-32 | 26-32 |
+| `wrong_value` | **8-15** | 31-32 | 32 | 28-32 |
+| **share of false claims caught** | **50-68%** | 97-100% | 98-99% | 97-99% |
+| C correct / 64 | **0** | 63 | 64 | 62-64 |
+
+Four findings.
 
 **The reranker has real signal but misses between a third and a half of false claims.**
 AUC separating A from B is 0.91-0.96, so the score is far from random. At the
@@ -99,6 +116,12 @@ must never collapse: one is a finding, the other is a gap in the data.
 **The prompt is not what makes the difference.** Stripping the judge's prompt to three
 lines costs between 0 and 5 cases out of 160. The gap against the reranker is the
 model, not the instruction.
+
+**Nor is it the particular judge.** A second model from a different family and a fifth
+the size, qwen3.8-27b, lands in the same range. It holds with reasoning switched off,
+where the model answers in six completion tokens, so the judge is not an expensive
+component: the gap is between a reranker and a language model, not between a small
+model and a large one.
 
 ### One case, both instruments
 
@@ -134,8 +157,14 @@ the wrong side of that line today.
 - The benchmark is constructed and clean: one claim against one short trace entry. Real
   sessions carry many entries with long results. These numbers are a ceiling, not a
   field estimate.
-- One judge model. Whether the result is the model or the class of model is untested;
-  a second judge would separate them.
+- Two judge models, both instruction-tuned chat models. Whether a third family would
+  agree is untested, though the two here differ in vendor and by a factor of four in
+  size.
+- Groq rate limits cost rows in the qwen runs: 17 of 4320 with reasoning on and 31 of
+  4320 with it off, against 0 for gpt-oss. Those rows leave the denominator, so cells
+  in those two runs are not all out of the same total. The worst affected,
+  `minimal/prose` without reasoning, is 136 of 140 rather than of 160. Percentages are
+  reported per cell for that reason.
 - `QwenReranker` is the only reranker implementation in the framework, so the finding
   is about that model at 0.6B parameters. A larger cross-encoder may do better, and
   NevIR suggests not by much.
@@ -152,6 +181,8 @@ the wrong side of that line today.
 | `run_judge.py` | scores every case with an LLM judge, three prompts |
 | `results/reranker_all.json` | reranker scores and per-mode summaries |
 | `results/judge_openai-gpt-oss-120b_all_all.json` | judge verdicts, 3 prompts x 5 formats |
+| `results/judge_qwen-qwen3-8-27b_all_all.json` | second judge, reasoning on |
+| `results/judge_qwen-qwen3-8-27b_all_all_noreasoning.json` | second judge, reasoning off |
 
 ## Reproducing
 
@@ -162,10 +193,14 @@ pair at 8 workers.
 
 Two harness details cost a run each and are worth knowing:
 
-- gpt-oss models emit reasoning before content, so a small `max_tokens` returns an
-  **empty message and no error**. All 288 rows came back blank at `max_tokens=16`.
-  The run uses `max_tokens=512` with `reasoning_effort="low"`, about 55 completion
-  tokens per call.
+- The two model families treat reasoning oppositely, and assuming otherwise gives
+  wrong numbers with no error raised. gpt-oss always reasons before content, so a
+  small `max_tokens` returns an **empty message and no error**: all 288 rows came back
+  blank at `max_tokens=16`, and `reasoning_effort` cannot be set to "none". qwen3.8 on
+  Groq does not reason by default, answering in 6 tokens, and passing
+  `reasoning_effort="low"` switches reasoning on. The runs use `max_tokens=512` with
+  `reasoning_effort="low"` so that both families reason, which is what makes the
+  comparison between them like for like.
 - In 7 of 1440 calls the model wrote the verdict with a zero-width space inside the
   word (`CONTRADI​CTS`). Unstripped, those rows fall out of the denominator and
   accuracy is overstated.

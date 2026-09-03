@@ -1,11 +1,143 @@
-% Add your references here in BibTeX format
+% References for the Accountability paper.
 %
-% Example:
-% @article{example2024,
-%   title={Example Paper Title},
-%   author={Author, First and Author, Second},
-%   journal={Journal Name},
-%   year={2024},
-%   volume={1},
-%   pages={1--10}
-% }
+% VERIFIED means the title, authors, year and any figure cited in the text were
+% checked against the source on 2026-09-03. UNVERIFIED entries carry a note saying
+% exactly what still has to be confirmed; do not cite a figure from one of those
+% until it has been read.
+
+% ------------------------------------------------------------------
+% Human oversight at the action boundary
+% ------------------------------------------------------------------
+
+% VERIFIED. Figures confirmed in the abstract: models wrongly hold authorized,
+% evidence-cleared work on 28.1% of opportunities and wrongly allow unsafe work on
+% 1.0%. Also: 106 scenarios, 30 model conditions, evidence-reversed mirrors scored
+% 63.8% against 98.5% on the incidents themselves.
+@misc{serdar2026steerbench,
+  title        = {{SteerBench-Work}: A Benchmark for Agent Steering at Action Boundaries},
+  author       = {Serdar, Oguz and Mertayak, Cuneyt},
+  year         = {2026},
+  eprint       = {2608.12654},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url          = {https://arxiv.org/abs/2608.12654}
+}
+
+% VERIFIED. Confirmed: 125 labeled agent actions, reviewer agreement Fleiss' kappa
+% = 0.52, realized danger-through is U-shaped in the escalation rate, and the
+% safety-optimal escalation rate is below full escalation.
+@misc{turan2026oversight,
+  title        = {Oversight Has a Capacity: Calibrating Agent Guards to a Subjective, Fatiguing Human},
+  author       = {Turan, Emre},
+  year         = {2026},
+  eprint       = {2606.08919},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url          = {https://arxiv.org/abs/2606.08919}
+}
+
+% ------------------------------------------------------------------
+% Divergence between what an agent reports and what it executed
+% ------------------------------------------------------------------
+
+% Title, authors and year VERIFIED.
+% UNVERIFIED: the 25-57% deception range attributed to this work. The abstract only
+% states that agent deception is "a genuine and pressing issue in tool-use
+% contexts". Read the results tables before citing any number.
+@misc{bu2026spade,
+  title        = {{SPADE-Bench}: Evaluating Spontaneous Strategic Deception in Agents via Plan-Action Divergence},
+  author       = {Bu, Yuyan and Li, Haowei and Zheng, Qirui and Dong, Bowen and Yang, Kaiyue and Ji, Jiaming and Tan, Yingshui and Li, Wenxin and Yang, Yaodong and Dai, Juntao},
+  year         = {2026},
+  eprint       = {2606.02380},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url          = {https://arxiv.org/abs/2606.02380}
+}
+
+% UNVERIFIED, placeholder. Recorded from working notes as OpenReview 40wuXQMQRU,
+% reporting that 46-68% of failed traces end in a response contradicting a verifier
+% the agent itself called. Title, authors, venue and the figure all still need
+% checking before this is cited.
+@misc{artifactfaithfulness2026,
+  title        = {Artifact faithfulness in agent traces (TITLE UNVERIFIED)},
+  author       = {{Authors unverified}},
+  year         = {2026},
+  note         = {OpenReview 40wuXQMQRU. Verify before citing.},
+  url          = {https://openreview.net/forum?id=40wuXQMQRU}
+}
+
+% ------------------------------------------------------------------
+% Negation in neural retrieval: prior art for the reranker experiment
+% ------------------------------------------------------------------
+
+% VERIFIED. Abstract confirms: cross-encoders perform best, then late-interaction,
+% then bi-encoder and sparse; most IR models including SOTA ones perform "the same
+% or worse than a random ranking" on documents differing only by negation.
+@inproceedings{weller2024nevir,
+  title     = {{NevIR}: Negation in Neural Information Retrieval},
+  author    = {Weller, Orion and Lawrie, Dawn and Van Durme, Benjamin},
+  booktitle = {Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics (EACL)},
+  year      = {2024},
+  note      = {arXiv:2305.07614},
+  url       = {https://arxiv.org/abs/2305.07614}
+}
+
+% UNVERIFIED, placeholder. Reproduction study at SIGIR 2025, DOI 10.1145/3726302.3730294.
+% Reported to find that listwise LLM rerankers outperform other architectures but
+% still fall short of human performance. Authors and exact findings need checking.
+@inproceedings{reproducingnevir2025,
+  title     = {Reproducing {NevIR}: Negation in Neural Information Retrieval},
+  author    = {{Authors unverified}},
+  booktitle = {Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval},
+  year      = {2025},
+  note      = {DOI 10.1145/3726302.3730294. Verify authors before citing.},
+  url       = {https://dl.acm.org/doi/10.1145/3726302.3730294}
+}
+
+% UNVERIFIED, placeholder. Benchmark for exclusionary queries, cited in NevIR
+% follow-up work. Needs its own entry with authors, venue and year.
+@misc{excluir,
+  title  = {{ExcluIR}: Exclusionary retrieval (DETAILS UNVERIFIED)},
+  author = {{Authors unverified}},
+  year   = {2024},
+  note   = {Verify before citing.}
+}
+
+% ------------------------------------------------------------------
+% Prompt injection and the utility/security trade-off
+% ------------------------------------------------------------------
+
+% UNVERIFIED as a citable reference: this is a software project, not a paper.
+% Used in the text to support that utility and security must be reported
+% separately, because an agent reaches perfect security by refusing everything.
+% Decide whether to cite the repository or the AgentDojo paper it derives from.
+@misc{midojo,
+  title        = {{MiDojo}: prompt-injection evaluation for agents},
+  author       = {{asago-ai}},
+  year         = {2026},
+  howpublished = {\url{https://github.com/asago-ai/midojo}},
+  note         = {Software. Consider citing AgentDojo instead or as well.}
+}
+
+% ------------------------------------------------------------------
+% Trace format
+% ------------------------------------------------------------------
+
+% VERIFIED as the source of the attribute names used in the experiment's OTel
+% rendering: gen_ai.operation.name, gen_ai.tool.name, gen_ai.tool.call.id,
+% gen_ai.tool.call.arguments, gen_ai.tool.call.result.
+@misc{otelgenai,
+  title        = {{OpenTelemetry} Semantic Conventions for Generative {AI}: execute\_tool span},
+  author       = {{OpenTelemetry Authors}},
+  year         = {2026},
+  howpublished = {\url{https://github.com/open-telemetry/semantic-conventions-genai}}
+}
+
+% ------------------------------------------------------------------
+% Gaussia framework papers to cross-reference
+% ------------------------------------------------------------------
+
+% TODO: add entries for the Role Adherence and Prompt Leakage Resistance papers
+% once their canonical citation form in gaussia-labs/papers is settled. Both are
+% referenced in the text: Role Adherence for why it is the wrong instrument for
+% oversight, and PLR for the threshold-transfer precedent behind the judge design.
