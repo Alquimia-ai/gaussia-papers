@@ -1,30 +1,57 @@
+# Local research notes, never published
 researches/
 
-**# LATEX
+# LaTeX build artifacts. Only main.tex, references.bib and main.pdf are kept.
 *.aux
-*.lof
-*.log
-*.lot
-*.fls
-*.out
-*.toc
-*.fmt
-*.fot
-*.cbl
-*.cb2
-*.lb
-*.glo
-*.idx
-*.gls
-*.ist
 *.bbl
 *.bcf
 *.blg
+*.cb2
+*.cbl
+*.fdb_latexmk
+*.fls
+*.fmt
+*.fot
+*.glo
+*.gls
+*.idx
+*.ist
+*.lb
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.xdv
 
+# Credentials
 *.env
-.DS_Store
-generate_benchmark.py
+!.env.example
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Model and dataset caches pulled by the experiment runners
+.cache/
+models/
+*.safetensors
+*.bin
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Superseded
+generate_benchmark.py
