@@ -1,0 +1,204 @@
+{
+  "model": "google/gemma-4-31B-it",
+  "temperature_sweep": [
+    {
+      "case": "clear_refuted",
+      "temperature": 0.0,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "(": 0.0,
+        "{": 0.0,
+        "[": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "vague",
+      "temperature": 0.0,
+      "verdict": "2",
+      "p": 0.99999988,
+      "alternatives": {
+        "2": 0.99999988,
+        "{": 3e-08,
+        "0": 1e-08,
+        "//": 1e-08
+      }
+    },
+    {
+      "case": "half_true",
+      "temperature": 0.0,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "2": 1e-08,
+        "0": 0.0,
+        "": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "clear_refuted",
+      "temperature": 0.5,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "(": 0.0,
+        "{": 0.0,
+        "[": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "vague",
+      "temperature": 0.5,
+      "verdict": "2",
+      "p": 0.99999988,
+      "alternatives": {
+        "2": 0.99999988,
+        "{": 3e-08,
+        "0": 1e-08,
+        "//": 1e-08
+      }
+    },
+    {
+      "case": "half_true",
+      "temperature": 0.5,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "2": 1e-08,
+        "0": 0.0,
+        "": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "clear_refuted",
+      "temperature": 1.0,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "(": 0.0,
+        "{": 0.0,
+        "[": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "vague",
+      "temperature": 1.0,
+      "verdict": "2",
+      "p": 0.99999988,
+      "alternatives": {
+        "2": 0.99999988,
+        "{": 3e-08,
+        "0": 1e-08,
+        "//": 1e-08
+      }
+    },
+    {
+      "case": "half_true",
+      "temperature": 1.0,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "2": 1e-08,
+        "0": 0.0,
+        "": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "clear_refuted",
+      "temperature": 1.5,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "(": 0.0,
+        "{": 0.0,
+        "[": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "vague",
+      "temperature": 1.5,
+      "verdict": "2",
+      "p": 0.99999988,
+      "alternatives": {
+        "2": 0.99999988,
+        "{": 3e-08,
+        "0": 1e-08,
+        "//": 1e-08
+      }
+    },
+    {
+      "case": "half_true",
+      "temperature": 1.5,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "2": 1e-08,
+        "0": 0.0,
+        "": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "clear_refuted",
+      "temperature": 2.0,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "(": 0.0,
+        "{": 0.0,
+        "[": 0.0,
+        "<turn|>": 0.0
+      }
+    },
+    {
+      "case": "vague",
+      "temperature": 2.0,
+      "verdict": "2",
+      "p": 0.99999988,
+      "alternatives": {
+        "2": 0.99999988,
+        "{": 3e-08,
+        "0": 1e-08,
+        "//": 1e-08
+      }
+    },
+    {
+      "case": "half_true",
+      "temperature": 2.0,
+      "verdict": "1",
+      "p": 1.0,
+      "alternatives": {
+        "1": 1.0,
+        "2": 1e-08,
+        "0": 0.0,
+        "": 0.0,
+        "<turn|>": 0.0
+      }
+    }
+  ],
+  "sampling_votes": {
+    "1.0": {
+      "2": 8
+    },
+    "2.0": {
+      "2": 8
+    }
+  },
+  "samples": 8
+}

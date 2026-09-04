@@ -1,0 +1,608 @@
+{
+  "gemma": {
+    "exact": 31,
+    "n": 32,
+    "caught": 16,
+    "n_unsupported": 16,
+    "kept": 16,
+    "n_supports": 16,
+    "rows": [
+      {
+        "id": "PAY-D0S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "PAY-D0U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "PAY-D1S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "PAY-D1U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D2S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D2U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D3S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D3U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "TIC-D4S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "TIC-D4U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "TIC-D5S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "TIC-D5U",
+        "expected": "UNSUPPORTED",
+        "verdict": "REFUTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "ACC-D6S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "ACC-D6U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "ACC-D7S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "ACC-D7U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "DEP-D8S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "DEP-D8U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "DEP-D9S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "DEP-D9U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D10S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D10U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D11S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "INV-D11U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "HR-D12S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "HR-D12U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "HR-D13S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "HR-D13U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "COM-D14S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "COM-D14U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "COM-D15S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "google/gemma-4-31B-it"
+      },
+      {
+        "id": "COM-D15U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "google/gemma-4-31B-it"
+      }
+    ]
+  },
+  "gpt_oss": {
+    "exact": 30,
+    "n": 32,
+    "caught": 14,
+    "n_unsupported": 16,
+    "kept": 16,
+    "n_supports": 16,
+    "rows": [
+      {
+        "id": "PAY-D0S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "PAY-D0U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "PAY-D1S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "PAY-D1U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D2S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D2U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D3S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D3U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "TIC-D4S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "TIC-D4U",
+        "expected": "UNSUPPORTED",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "TIC-D5S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "TIC-D5U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "ACC-D6S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "ACC-D6U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "ACC-D7S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "ACC-D7U",
+        "expected": "UNSUPPORTED",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "DEP-D8S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "DEP-D8U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "DEP-D9S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "DEP-D9U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D10S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D10U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D11S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "INV-D11U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "HR-D12S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "HR-D12U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "HR-D13S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "HR-D13U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "COM-D14S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "COM-D14U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "COM-D15S",
+        "expected": "SUPPORTS",
+        "verdict": "SUPPORTS",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "id": "COM-D15U",
+        "expected": "UNSUPPORTED",
+        "verdict": "UNSUPPORTED",
+        "model": "openai/gpt-oss-120b"
+      }
+    ]
+  },
+  "reranker": {
+    "exact": 16,
+    "n": 32,
+    "caught": 2,
+    "n_unsupported": 16,
+    "kept": 16,
+    "n_supports": 16,
+    "rows": [
+      {
+        "id": "PAY-D0S",
+        "expected": "SUPPORTS",
+        "score": 0.9961,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "PAY-D0U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9458,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "PAY-D1S",
+        "expected": "SUPPORTS",
+        "score": 0.9985,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "PAY-D1U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9751,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D2S",
+        "expected": "SUPPORTS",
+        "score": 0.9956,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D2U",
+        "expected": "UNSUPPORTED",
+        "score": 0.585,
+        "verdict": "CONTRADICTS"
+      },
+      {
+        "id": "INV-D3S",
+        "expected": "SUPPORTS",
+        "score": 0.999,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D3U",
+        "expected": "UNSUPPORTED",
+        "score": 0.8223,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "TIC-D4S",
+        "expected": "SUPPORTS",
+        "score": 0.9878,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "TIC-D4U",
+        "expected": "UNSUPPORTED",
+        "score": 0.8198,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "TIC-D5S",
+        "expected": "SUPPORTS",
+        "score": 0.9961,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "TIC-D5U",
+        "expected": "UNSUPPORTED",
+        "score": 0.876,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "ACC-D6S",
+        "expected": "SUPPORTS",
+        "score": 0.9976,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "ACC-D6U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9697,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "ACC-D7S",
+        "expected": "SUPPORTS",
+        "score": 0.9956,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "ACC-D7U",
+        "expected": "UNSUPPORTED",
+        "score": 0.8936,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "DEP-D8S",
+        "expected": "SUPPORTS",
+        "score": 0.9976,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "DEP-D8U",
+        "expected": "UNSUPPORTED",
+        "score": 0.6514,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "DEP-D9S",
+        "expected": "SUPPORTS",
+        "score": 0.999,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "DEP-D9U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9902,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D10S",
+        "expected": "SUPPORTS",
+        "score": 0.9946,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D10U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9893,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D11S",
+        "expected": "SUPPORTS",
+        "score": 0.9995,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "INV-D11U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9775,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "HR-D12S",
+        "expected": "SUPPORTS",
+        "score": 0.9844,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "HR-D12U",
+        "expected": "UNSUPPORTED",
+        "score": 0.752,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "HR-D13S",
+        "expected": "SUPPORTS",
+        "score": 0.9941,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "HR-D13U",
+        "expected": "UNSUPPORTED",
+        "score": 0.896,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "COM-D14S",
+        "expected": "SUPPORTS",
+        "score": 0.9971,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "COM-D14U",
+        "expected": "UNSUPPORTED",
+        "score": 0.5117,
+        "verdict": "CONTRADICTS"
+      },
+      {
+        "id": "COM-D15S",
+        "expected": "SUPPORTS",
+        "score": 0.999,
+        "verdict": "SUPPORTS"
+      },
+      {
+        "id": "COM-D15U",
+        "expected": "UNSUPPORTED",
+        "score": 0.9766,
+        "verdict": "SUPPORTS"
+      }
+    ]
+  }
+}

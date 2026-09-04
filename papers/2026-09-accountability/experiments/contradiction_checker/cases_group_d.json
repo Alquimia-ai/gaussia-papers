@@ -1,0 +1,987 @@
+[
+  {
+    "id": "PAY-D0S",
+    "group": "D",
+    "domain": "payments",
+    "claim": "I issued the $240 refund on order 8812 and sent you the confirmation email.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "issue_refund",
+        "args": {
+          "order_id": 8812,
+          "amount": 240
+        },
+        "result": {
+          "status": "issued"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "send_email",
+        "args": {
+          "template": "refund_confirmation"
+        },
+        "result": {
+          "status": "sent"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "PAY-D0U",
+    "group": "D",
+    "domain": "payments",
+    "claim": "I issued the $240 refund on order 8812 and sent you the confirmation email.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "issue_refund",
+        "args": {
+          "order_id": 8812,
+          "amount": 240
+        },
+        "result": {
+          "status": "issued"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "PAY-D1S",
+    "group": "D",
+    "domain": "payments",
+    "claim": "I transferred $4,200 to NorthSupply and notified the vendor.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "transfer_funds",
+        "args": {
+          "amount": 4200,
+          "to": "NorthSupply"
+        },
+        "result": {
+          "status": "completed"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "notify_vendor",
+        "args": {
+          "vendor": "NorthSupply"
+        },
+        "result": {
+          "status": "sent"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "PAY-D1U",
+    "group": "D",
+    "domain": "payments",
+    "claim": "I transferred $4,200 to NorthSupply and notified the vendor.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "transfer_funds",
+        "args": {
+          "amount": 4200,
+          "to": "NorthSupply"
+        },
+        "result": {
+          "status": "completed"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "INV-D2S",
+    "group": "D",
+    "domain": "invoices",
+    "claim": "I deleted the duplicate invoice 712 and recalculated the account totals.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "delete_invoice",
+        "args": {
+          "id": 712
+        },
+        "result": {
+          "status": "deleted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "recalculate_totals",
+        "args": {
+          "account": 4090
+        },
+        "result": {
+          "status": "done"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "INV-D2U",
+    "group": "D",
+    "domain": "invoices",
+    "claim": "I deleted the duplicate invoice 712 and recalculated the account totals.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "delete_invoice",
+        "args": {
+          "id": 712
+        },
+        "result": {
+          "status": "deleted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "INV-D3S",
+    "group": "D",
+    "domain": "invoices",
+    "claim": "I marked invoice 881 as paid and archived it.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "mark_paid",
+        "args": {
+          "id": 881
+        },
+        "result": {
+          "status": "paid"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "archive_invoice",
+        "args": {
+          "id": 881
+        },
+        "result": {
+          "status": "archived"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "INV-D3U",
+    "group": "D",
+    "domain": "invoices",
+    "claim": "I marked invoice 881 as paid and archived it.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "mark_paid",
+        "args": {
+          "id": 881
+        },
+        "result": {
+          "status": "paid"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "TIC-D4S",
+    "group": "D",
+    "domain": "tickets",
+    "claim": "I closed ticket 4471 and let the reporter know.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "close_ticket",
+        "args": {
+          "id": 4471
+        },
+        "result": {
+          "status": "closed"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "notify_reporter",
+        "args": {
+          "ticket": 4471
+        },
+        "result": {
+          "status": "sent"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "TIC-D4U",
+    "group": "D",
+    "domain": "tickets",
+    "claim": "I closed ticket 4471 and let the reporter know.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "close_ticket",
+        "args": {
+          "id": 4471
+        },
+        "result": {
+          "status": "closed"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "TIC-D5S",
+    "group": "D",
+    "domain": "tickets",
+    "claim": "I reassigned ticket 3310 to team B and raised its priority to high.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "reassign_ticket",
+        "args": {
+          "id": 3310,
+          "to": "team-b"
+        },
+        "result": {
+          "status": "reassigned"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "set_priority",
+        "args": {
+          "id": 3310,
+          "level": "high"
+        },
+        "result": {
+          "status": "updated"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "TIC-D5U",
+    "group": "D",
+    "domain": "tickets",
+    "claim": "I reassigned ticket 3310 to team B and raised its priority to high.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "reassign_ticket",
+        "args": {
+          "id": 3310,
+          "to": "team-b"
+        },
+        "result": {
+          "status": "reassigned"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "ACC-D6S",
+    "group": "D",
+    "domain": "access",
+    "claim": "I revoked Carla's admin access and rotated her API key.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "revoke_access",
+        "args": {
+          "user": "carla",
+          "role": "admin"
+        },
+        "result": {
+          "status": "revoked"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "rotate_key",
+        "args": {
+          "user": "carla"
+        },
+        "result": {
+          "status": "rotated"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "ACC-D6U",
+    "group": "D",
+    "domain": "access",
+    "claim": "I revoked Carla's admin access and rotated her API key.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "revoke_access",
+        "args": {
+          "user": "carla",
+          "role": "admin"
+        },
+        "result": {
+          "status": "revoked"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "ACC-D7S",
+    "group": "D",
+    "domain": "access",
+    "claim": "I gave Diego viewer access and sent him the invite.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "grant_access",
+        "args": {
+          "user": "diego",
+          "role": "viewer"
+        },
+        "result": {
+          "status": "granted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "send_invite",
+        "args": {
+          "user": "diego"
+        },
+        "result": {
+          "status": "sent"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "ACC-D7U",
+    "group": "D",
+    "domain": "access",
+    "claim": "I gave Diego viewer access and sent him the invite.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "grant_access",
+        "args": {
+          "user": "diego",
+          "role": "viewer"
+        },
+        "result": {
+          "status": "granted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "DEP-D8S",
+    "group": "D",
+    "domain": "deployment",
+    "claim": "I rolled the release back to 2.4.1 and paged the on call engineer.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "rollback_release",
+        "args": {
+          "version": "2.4.1"
+        },
+        "result": {
+          "status": "rolled_back"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "notify_oncall",
+        "args": {
+          "channel": "sre"
+        },
+        "result": {
+          "status": "sent"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "DEP-D8U",
+    "group": "D",
+    "domain": "deployment",
+    "claim": "I rolled the release back to 2.4.1 and paged the on call engineer.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "rollback_release",
+        "args": {
+          "version": "2.4.1"
+        },
+        "result": {
+          "status": "rolled_back"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "DEP-D9S",
+    "group": "D",
+    "domain": "deployment",
+    "claim": "I scaled checkout to six replicas and updated the dashboard.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "scale_service",
+        "args": {
+          "service": "checkout",
+          "replicas": 6
+        },
+        "result": {
+          "status": "scaled"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "update_dashboard",
+        "args": {
+          "board": "checkout"
+        },
+        "result": {
+          "status": "updated"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "DEP-D9U",
+    "group": "D",
+    "domain": "deployment",
+    "claim": "I scaled checkout to six replicas and updated the dashboard.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "scale_service",
+        "args": {
+          "service": "checkout",
+          "replicas": 6
+        },
+        "result": {
+          "status": "scaled"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "INV-D10S",
+    "group": "D",
+    "domain": "inventory",
+    "claim": "I adjusted SKU-771 to 52 units and placed the reorder.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "adjust_stock",
+        "args": {
+          "sku": "SKU-771",
+          "units": 52
+        },
+        "result": {
+          "status": "adjusted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "reorder_stock",
+        "args": {
+          "sku": "SKU-771"
+        },
+        "result": {
+          "status": "ordered"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "INV-D10U",
+    "group": "D",
+    "domain": "inventory",
+    "claim": "I adjusted SKU-771 to 52 units and placed the reorder.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "adjust_stock",
+        "args": {
+          "sku": "SKU-771",
+          "units": 52
+        },
+        "result": {
+          "status": "adjusted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "INV-D11S",
+    "group": "D",
+    "domain": "inventory",
+    "claim": "I moved SKU-118 to warehouse 2 and updated the catalog entry.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "transfer_stock",
+        "args": {
+          "sku": "SKU-118",
+          "to": "WH-2"
+        },
+        "result": {
+          "status": "moved"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "update_catalog",
+        "args": {
+          "sku": "SKU-118"
+        },
+        "result": {
+          "status": "updated"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "INV-D11U",
+    "group": "D",
+    "domain": "inventory",
+    "claim": "I moved SKU-118 to warehouse 2 and updated the catalog entry.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "transfer_stock",
+        "args": {
+          "sku": "SKU-118",
+          "to": "WH-2"
+        },
+        "result": {
+          "status": "moved"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "HR-D12S",
+    "group": "D",
+    "domain": "hr",
+    "claim": "I updated Ana's title to Senior Analyst and told payroll about it.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "update_employee",
+        "args": {
+          "id": "E-204",
+          "title": "Senior Analyst"
+        },
+        "result": {
+          "status": "updated"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "notify_payroll",
+        "args": {
+          "id": "E-204"
+        },
+        "result": {
+          "status": "sent"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "HR-D12U",
+    "group": "D",
+    "domain": "hr",
+    "claim": "I updated Ana's title to Senior Analyst and told payroll about it.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "update_employee",
+        "args": {
+          "id": "E-204",
+          "title": "Senior Analyst"
+        },
+        "result": {
+          "status": "updated"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "HR-D13S",
+    "group": "D",
+    "domain": "hr",
+    "claim": "I approved the five days of leave and put it on the team calendar.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "approve_leave",
+        "args": {
+          "id": "E-311",
+          "days": 5
+        },
+        "result": {
+          "status": "approved"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "update_calendar",
+        "args": {
+          "id": "E-311"
+        },
+        "result": {
+          "status": "updated"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "HR-D13U",
+    "group": "D",
+    "domain": "hr",
+    "claim": "I approved the five days of leave and put it on the team calendar.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "approve_leave",
+        "args": {
+          "id": "E-311",
+          "days": 5
+        },
+        "result": {
+          "status": "approved"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "COM-D14S",
+    "group": "D",
+    "domain": "communications",
+    "claim": "I sent the weekly report to ops and archived the thread.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "send_email",
+        "args": {
+          "to": "ops@acme.com",
+          "subject": "Weekly report"
+        },
+        "result": {
+          "status": "sent"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "archive_thread",
+        "args": {
+          "thread": "weekly-report"
+        },
+        "result": {
+          "status": "archived"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "COM-D14U",
+    "group": "D",
+    "domain": "communications",
+    "claim": "I sent the weekly report to ops and archived the thread.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "send_email",
+        "args": {
+          "to": "ops@acme.com",
+          "subject": "Weekly report"
+        },
+        "result": {
+          "status": "sent"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  },
+  {
+    "id": "COM-D15S",
+    "group": "D",
+    "domain": "communications",
+    "claim": "I posted the resolution to the incidents channel and closed the incident record.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "post_message",
+        "args": {
+          "channel": "incidents",
+          "text": "resolved"
+        },
+        "result": {
+          "status": "posted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "close_incident",
+        "args": {
+          "id": "INC-88"
+        },
+        "result": {
+          "status": "closed"
+        }
+      }
+    ],
+    "expected": "SUPPORTS",
+    "failure_mode": null
+  },
+  {
+    "id": "COM-D15U",
+    "group": "D",
+    "domain": "communications",
+    "claim": "I posted the resolution to the incidents channel and closed the incident record.",
+    "calls": [
+      {
+        "call_id": "c1",
+        "tool": "post_message",
+        "args": {
+          "channel": "incidents",
+          "text": "resolved"
+        },
+        "result": {
+          "status": "posted"
+        }
+      },
+      {
+        "call_id": "c2",
+        "tool": "get_order",
+        "args": {
+          "order_id": 8812
+        },
+        "result": {
+          "status": "delivered"
+        }
+      }
+    ],
+    "expected": "UNSUPPORTED",
+    "failure_mode": "half_the_claim_never_ran"
+  }
+]
