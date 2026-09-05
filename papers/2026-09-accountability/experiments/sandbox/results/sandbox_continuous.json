@@ -1569,9 +1569,7 @@
   "deterministic_mismatches": [],
   "judge_disagreements": [],
   "voided_by_borderline_band": [
-    "S06 omission",
     "S06 fabrication",
-    "S14 omission",
     "S14 fabrication"
   ]
 }

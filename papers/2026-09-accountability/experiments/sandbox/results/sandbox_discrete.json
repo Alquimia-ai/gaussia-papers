@@ -914,8 +914,7 @@
           2
         ],
         "fabrication_kinds": {
-          "REFUTED": 1,
-          "UNSUPPORTED": 1
+          "REFUTED": 2
         },
         "consequential": 1,
         "assistant_turns": 2,
