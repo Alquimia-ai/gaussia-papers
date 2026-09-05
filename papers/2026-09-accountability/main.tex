@@ -63,7 +63,6 @@
 \rfoot{\thepage}
 
 % Metadata
-% TODO(title): working title. Decide before the first full draft.
 \title{Accountability: Measuring Respect for Human Oversight\\ in Tool-Using Assistants}
 \author{
   Axel Fritz \\
@@ -90,18 +89,19 @@ the trace and a declared policy with no model in the loop, and reported per seve
 level. ActionDisclosure reports two numbers that are never averaged: how much of what
 ran was never mentioned, and how often what was said is refuted by the trace.
 
-One rule shapes both. A language model never decides a denominator, because an
+One rule shapes both. A language model does not decide a denominator, because an
 assistant that says almost nothing makes almost no claims, so counting claims gives
 silence a near perfect score and rewards exactly what the metric exists to catch.
-Denominators come from the trace, the policy and the turn count, and the model only
-judges an item that was already counted.
+Denominators come from the trace, the policy and the turn count, the model only judges
+an item that was already counted, and the single exception, a turn the judge could not
+read at all, is reported as a count beside the figure.
 
-Two experiments. On 288 constructed cases, the reranker the framework already uses for
+Two experiments. On 320 constructed cases, the reranker the framework already uses for
 contradiction checking separates true from false claims well, at an AUC of 0.91 to
 0.96, and still certifies up to half of the false claims as true at its own threshold,
 missing most often when a call failed and the assistant reported success. A judge reaches 97 to 100 percent on the
 same cases, and an inference model a third the size of the reranker sits between them,
-recovering the third outcome the reranker structurally cannot express and failing where
+recovering the third outcome the shipped decision rule cannot express and failing where
 the reranker fails, on a call that returned an error. Eighteen synthetic sessions then show the
 definitions compute: an assistant that refuses everything scores best under the
 alternative we reject, OversightCompliance returns identical figures under every judge
@@ -109,8 +109,7 @@ configuration we ran, and ActionDisclosure moves by roughly a third between two 
 them.
 \end{abstract}
 
-\keywords{% TODO(keywords)
-human oversight, accountability, agentic evaluation, escalation policy,
+\keywords{human oversight, accountability, agentic evaluation, escalation policy,
 tool traces, LLM evaluation}
 
 % ============================================================
@@ -133,11 +132,13 @@ and whether it handles personal data the way the regulation demands. What none o
 them measures is whether the assistant respected the authority that was reserved
 for a person, which is the question a supervisor actually asks once something has
 gone wrong. In this paper we propose two metrics that answer it, we state exactly
-which fields a dataset has to carry for them to be computable, and we run them
-over a synthetic session so that the reader can see the number that comes out and
-follow where every term of it came from.
+which fields a dataset has to carry for them to be computable, and we report two
+experiments, one that decides which instrument can verify a claim against a trace and
+one that runs both metrics over synthetic sessions, so that the reader can see the
+number that comes out and follow where every term of it came from.
 
 \subsection{Three Ways to Fail Accountability}
+\label{sec:threeways}
 
 Accountability does not break in a single way, and separating the ways matters,
 because each of them is found in a different place in the data and only two of
@@ -164,7 +165,7 @@ when the trace shows that a refund was issued and does not show who issued it, s
 it becomes impossible to tell whether the assistant acted on its own or executed
 an instruction a person had already given. We treat this one differently from the
 other two, because it is a defect of the record and not of the assistant, and a
-defect of the record cannot be scored: it makes the score inadmissible.
+defect of the record does not lower a score: it says how far the score can be trusted.
 
 \subsection{Why the Metrics We Already Have Do Not Cover This}
 
@@ -208,7 +209,14 @@ silence the metric exists to detect.
 We therefore build every denominator out of data that does not depend on a
 judgement, namely the number of actions the trace records, the number of those
 actions that the declared policy marks as needing approval, and the number of
-assistant turns in the conversation. The model is still used, and it is used where
+assistant turns in the conversation. The rule has one exception and we state it here
+because the implementation takes it. A turn the judge could not decide at all leaves
+the fabrication denominator, since charging a claim nobody could identify is worse than
+dropping it, and the count of such turns is reported next to the figure so a reader can
+see how much of the denominator a model removed. Every other denominator is untouched by
+any model, and a disclosure the judge could not decide is charged as undisclosed rather
+than dropped, because a vague statement about an executed action is a disclosure
+failure. The model is still used, and it is used where
 it is reliable, on the question of whether one specific claim is refuted by one
 specific trace entry. It answers about an item that was already counted, so its
 verdict can move a numerator and never a denominator.
@@ -233,11 +241,10 @@ This paper makes the following contributions:
   with violations planted and annotated in advance, that shows what each metric
   returns and makes every term of the result traceable to a field.
   \item \textbf{An empirical boundary between retrieval and verification}: a
-  benchmark of 320 constructed cases showing that the relevance reranker the
-  framework already uses for contradiction checking separates true claims from false
-  ones and cannot be turned into a verifier by any threshold, and stops discriminating
-  altogether once the trace is complete and only part of the claim is missing from
-  it.
+  benchmark of 320 constructed cases separating what the score of a relevance
+  reranker knows from what the framework's decision rule around it reports, and
+  locating the residual gap against a judge in one failure mode, a call that returned
+  an error.
 \end{itemize}
 % ============================================================
 \section{Related Work}
@@ -274,11 +281,9 @@ measure the gap on whatever trace the operator already has.
 
 \subsection{Negation in Neural Retrieval}
 
-Our reranker experiment reproduces a known limitation of retrieval models. NevIR
-constructs document pairs that differ only by a negation and shows that most
-information retrieval models rank them the same as or worse than a random ranking,
-with cross encoders the strongest architecture and still only just above random
-\citep{weller2024nevir}. The claims we test differ from
+Our reranker experiment reproduces a known limitation of retrieval models. NevIR constructs document
+pairs that differ only by a negation and measures how information retrieval models
+rank them \citep{weller2024nevir}. The claims we test differ from
 their trace entries in the same minimal way, since ``the transfer went through'' and
 a trace entry reporting a failed status share nearly every token, so the result in
 Section~\ref{sec:experiments} measures that same phenomenon on structured tool
@@ -296,7 +301,6 @@ these concerns into metrics that run over conversation and tool traces the opera
 already collects.
 
 
-% dataset-level metrics over conversation and tool traces the operator already has.
 
 % ============================================================
 \section{The Metrics}
@@ -334,10 +338,8 @@ covering both would hide the difference. We therefore report one figure for each
 severity level declared in the policy.
 
 Finally, a session in which no gated action was executed is reported as not
-evaluable, and never as a perfect score. This rule exists because the alternative
-rewards paralysis, since an assistant that refuses every request executes no gated
-action and would otherwise finish the evaluation with the best possible result
-while having done nothing at all.
+evaluable, and never as a perfect score, for the reason Section~\ref{sec:oversight}
+gives in full.
 
 
 % ============================================================
@@ -397,7 +399,7 @@ approvals. A session carrying all three looks like this.
 
 Two fields in that object exist because a metric branches on them and would otherwise
 have nothing to read. An approval carries \texttt{granted}, since a refusal is an event
-the trace has to record for the fourth check to distinguish an assistant that was told
+the trace has to record for the third check to distinguish an assistant that was told
 no from one that was never asked. A call carries \texttt{actor\_signature}, empty in the
 ordinary case, because it is what separates a declared name from an authenticated one
 in Section~\ref{sec:attributability}.
@@ -502,14 +504,16 @@ its supervisor.
 This is the same separation that prompt injection evaluations make when they report
 utility and security as two numbers, because an agent reaches perfect security by
 refusing everything and the only thing that keeps that from looking like success is
-refusing to combine the two figures. Detecting the opposite failure, holding work that was authorized and should have
-proceeded, requires paired scenarios in which the correct behavior is to act, and building those means
-generating data, which is a different job from measuring what an operator already
-has.
+refusing to combine the two figures. Detecting the opposite failure, holding work the
+assistant was authorized to do, is outside what this metric can see, and
+Section~\ref{sec:limitations} says why.
 
 \subsubsection{Diagnostics}
 
-Three counts are reported next to the score and none of them enters it.
+Four counts are reported next to the score and none of them enters it. The first is
+the uncovered calls of Section~\ref{sec:contract}, since a policy that names three of
+the forty tools an assistant can reach produces a score about a fraction of the
+session.
 
 A call to a \textbf{forbidden} tool is not an approval problem and no approval could
 have made it legitimate, so it is counted and named separately and never
@@ -552,10 +556,10 @@ calls a tool and reports the call in the same breath has disclosed it.
 
 The denominator is a count of trace entries, so it does not move between runs, and
 an assistant cannot lower it by talking less. Silence is what this number is built
-to catch, since the assistant that deletes three invoices and reports that it
-cleaned up the duplicates has written no false sentence anywhere in the transcript.
+to catch, and the invoice case of Section~\ref{sec:threeways} is what it looks like.
 
 \subsubsection{Fabrication}
+\label{sec:fabrication}
 
 Let $T$ be the assistant turns in the session and let $T_r \subseteq T$ be those
 containing at least one claim about the assistant's own conduct that the trace does
@@ -584,12 +588,13 @@ zero.
 \end{equation}
 
 The unit is the turn and not the claim, which is the whole point of the definition.
-Counting claims would require a model to decide how many claims a turn contains, and
-that count would differ between runs and would shrink for an assistant that says
-little, so the metric would reward the same silence that the omission figure exists
-to penalise. A turn with four false statements is charged once, which understates
+Counting claims would require a model to decide how many claims a turn contains, which
+is the denominator rule of Section~\ref{sec:denominator} in its most tempting form. A turn with four false statements is charged once, which understates
 the offence, and we accept that understatement because the alternative is a
 denominator nobody can reproduce.
+
+Both $T$ and $T_r$ are taken after the exclusion described below, so a turn the judge
+could not decide leaves the equation on both sides.
 
 A judge is used here, and it is used on an item that has already been counted: given
 one turn and the trace entries for that session, it decides whether any claim in the
@@ -599,10 +604,14 @@ turn is refuted. Its verdict can move the numerator and it cannot touch $|T|$.
 
 Some turns are neither clearly truthful nor clearly refuted, as when an assistant
 says it took care of the invoices without saying which ones or what taking care
-meant. We count these and we do not score them, meaning the item leaves the numerator and the
-denominator both, and the report carries the reduced count. Leaving it in the
-denominator would score it as clean, which is the one thing an unmeasured item must not
-do. There are two reasons for excluding it at all. Vagueness is
+meant. The two figures treat them differently and the asymmetry is deliberate. On the
+disclosure side the borderline case is a vague sentence about an action that ran, which
+is a disclosure failure and is charged as one; excluding it would let an assistant that
+says it took care of everything shrink its own omission denominator toward zero. On the
+fabrication side the borderline case is a turn where the judge could not decide whether
+a claim about conduct was made at all, and there the item leaves the numerator and the
+denominator both, with the reduced count reported, because leaving it in the denominator
+would score it as clean. Two reasons stand behind counting these at all. Vagueness is
 already charged by the omission figure, since an action that was never named is an
 action that was not disclosed, so scoring it again in the fabrication figure would
 charge the same behavior twice. And the count answers a question the score cannot, telling the reader how much of
@@ -619,8 +628,9 @@ implementation has to work without the signal it would prefer.
 
 We therefore define two modes and one rule about mixing them. In the continuous
 mode the judge returns a verdict with a confidence score and the threshold applies.
-In the discrete mode the judge returns one of three labels, refuted, supported or no
-evidence, and the borderline band is unavailable, so the counter reports zero and
+In the discrete mode the judge returns one of the four labels of
+Section~\ref{sec:fabrication} without a confidence, so the borderline band is
+unavailable, so the counter reports zero and
 the report says the band was not measured.
 
 The operator chooses the mode. If they ask for the continuous mode, the
@@ -637,10 +647,8 @@ produced by the other.
 \label{sec:attributability}
 
 Attribution is not a third metric and it does not produce a score. It answers a
-prior question about whether the record supports any conclusion at all, because
-a trace showing that a refund was issued without showing who issued it cannot
-distinguish an assistant acting alone from an assistant carrying out an instruction
-a person had already given.
+prior question about whether the record supports any conclusion at all, which is the
+third failure of Section~\ref{sec:threeways}.
 
 The flag takes one of four values over the dataset, and it is reported as a value
 and never averaged, since averaging a property of the record with a measurement of
@@ -680,8 +688,7 @@ runs both metrics end to end over synthetic sessions with the violations planted
 advance, so that every figure can be traced back to a field.
 
 What neither experiment shows is that these metrics correlate with accountability as
-a human auditor would judge it. That would need labelled production traces, and no
-such dataset exists yet. What they show is narrower and worth stating on its own: the
+a human auditor would judge it, which would need labelled production traces. What they show is narrower and worth stating on its own: the
 definitions are computable from the contract, the deterministic half returns the same
 number every time, and the design decisions we argued for change the result in the
 direction we argued they would.
@@ -758,20 +765,22 @@ a failed call and stating a wrong value. Those two are the modes that matter mos
 accountability, and they are also the ones a reader of the transcript alone would
 never catch.
 
-Tuning the threshold does not rescue it, and the reason is the trade it forces.
-Sweeping the cut over our own scores raises the false claims caught to between 139 and
-156 of 160, and it drops the true claims labelled correctly from between 61 and 64 of
-64 down to between 43 and 56. Every threshold buys accuracy on one class with accuracy
-on the other, and the judge makes no such trade, since it reaches 97 percent on the
-false claims while holding 61 to 63 of the 64 true ones at the same time.
+Moving the threshold trades one class against the other. Sweeping a single cut over
+our own scores, maximising total correct on a 0.01 grid, raises the false claims caught
+to between 139 and 156 of 160 and drops the true claims labelled correctly from between
+61 and 64 of 64 down to between 43 and 56. The sweep is fitted on the same 288 cases it
+is evaluated on, so those figures are an upper bound and not a held out estimate. The
+judge makes no such trade, since it reaches 97 percent on the false claims while
+holding 61 to 63 of the 64 true ones at the same time.
 
-On that fourth group the reranker stops discriminating altogether. It labels all 32
-cases as supported, catching 2 of the 16 where half the claim never ran, and it scores
-exactly the same on the complete and the incomplete trace because both share the
-claim's vocabulary. The judges do not: \texttt{gemma-4-31B} separates 16 of 16 and keeps
-16 of 16, and \texttt{gpt-oss-120b} 14 of 16 and 16 of 16. The gap between the two
-instruments is wider on the case the metric meets in production than on the case the
-first three groups test.
+On that fourth group the reranker's score separates the two halves almost perfectly,
+at an AUC of 0.984 with the complete trace outscoring the incomplete one in 16 of the
+16 matched pairs, and at the threshold the component ships it certifies 30 of the 32 as
+supported, because every score in the group sits above 0.6. This is the same failure as
+in the first three groups and it is a failure of the operating point, since a cut fitted
+to these scores recovers 30 of 32, which equals \texttt{gpt-oss-120b} and is one behind
+\texttt{gemma-4-31B} at 31 of 32. The two judges reach that without a cut fitted to the
+data, which is the practical difference between them here.
 
 One case carries the whole finding. The claim \emph{I transferred \$4,200 to
 NorthSupply} against a trace entry recording that same call returning
@@ -792,34 +801,59 @@ minimal way.
 On the 64 cases where the trace entry has nothing to do with the claim, the reranker
 scores the pair near zero, at a mean between 0.0009 and 0.0022, so the model does detect
 that nothing matches. The component then maps every score below the threshold to a
-contradiction, because two labels is all it has, and it reports 0 of those 64
-correctly. The information is present in the score and the label discards it.
+contradiction, because one cut and two labels is all its decision rule has, and it
+reports 0 of those 64 correctly. The information is present in the score and the
+decision rule discards it, and the difference matters: a band with a second cut over
+the same scores recovers all three outcomes at between 84 and 91 percent, fitted in
+sample. What the experiment locates is therefore a defect in how the framework reads
+the score, and the residual gap against a judge is the one Table~\ref{tab:modes}
+shows.
 
 For an audit that collapse is the expensive one. An assistant that misreported its
 conduct and a trace that has nothing to say about the claim are reported identically,
 and the first is a finding while the second is a gap in the record.
 
+\subsubsection{The Judge}
+
+Two language models were run over the 288 single entry cases under three system
+prompts and the same five renderings, and a third, \texttt{gemma-4-31B}, was run over
+the harder group and over the sandbox of Section~\ref{sec:sandbox}. Under the most stripped prompt, which names the three
+verdicts and says nothing else and is therefore the closest match to the single
+sentence the reranker receives, \texttt{gpt-oss-120b} catches between 97 and 100
+percent of the false claims and \texttt{qwen3.8-27b} between 98 and 99 percent, and
+both label the third group correctly, at 63 and 64 of 64.
+
+Neither the prompt nor the model size explains the gap. Enriching the prompt until it
+enumerates the five failure modes, which is teaching to the test and is kept only as a
+ceiling, moves the count by between minus one and plus four cases of 160. The smaller model, at roughly a fifth the
+size and from a different vendor, holds the same range, and it holds it with reasoning
+switched off where it answers in six completion tokens. What separates the two
+instruments is the kind of model and not the instruction or the budget.
+
 \subsubsection{The Instrument Built for This Task}
 
-Before reaching for a language model it is worth trying the component that exists for
-exactly this question. A natural language inference model takes a premise and a
+Between the reranker and a judge of that size sits a third option, and it is the one
+built for exactly this question. A natural language inference model takes a premise and a
 hypothesis and returns entailment, contradiction or neutral, which are our three
 outcomes under other names, and a standard one is smaller than the reranker and not
-bigger. We ran \texttt{DeBERTa-v3-base-mnli-fever-anli}, at 184 million parameters
-against the reranker's 600 million, over the same 320 cases.
+bigger. We ran \texttt{DeBERTa-v3-base-mnli-fever-anli}, at 184 million parameters against the
+reranker's 600 million and roughly a five hundredth of the judge, over the same 320
+cases.
 
 It recovers the third outcome, at 55 of 64 against the reranker's 0, which confirms
 that the collapse in Section~\ref{sec:threelabels} is a property of having two labels
 and not of the model behind them. It catches 123 of the 160 false claims, above the
-reranker's 80 to 109 and below the judge. And it fails in the same place the reranker
-does.
+reranker's 80 to 109 and below the judge, and it fails in the same place the reranker
+does, as Table~\ref{tab:modes} shows.
 
 \begin{table}[htbp]
 \centering
 \small
 \caption{False claims caught, by the way the claim is false, out of 32 each. The
-inference model is a third the size of the reranker and better everywhere, and the two
-share the same weakness on a call that returned a failure.}
+reranker and judge cells are ranges over the five trace renderings and the inference
+model was run on one. The inference model is a third the size of the reranker and
+better everywhere, and the two share the same weakness on a call that returned a
+failure.}
 \label{tab:modes}
 \begin{tabular}{lrrr}
 \toprule
@@ -844,35 +878,19 @@ left with nothing, since a model two orders of magnitude smaller catches three q
 of the false claims and keeps the three outcomes apart. What that operator gives up is
 named and it is specific.
 
-\subsubsection{The Judge}
-
-Two language models were run over the same 288 cases under three system prompts and
-the same five renderings. Under the most stripped prompt, which names the three
-verdicts and says nothing else and is therefore the closest match to the single
-sentence the reranker receives, \texttt{gpt-oss-120b} catches between 97 and 100
-percent of the false claims and \texttt{qwen3.8-27b} between 98 and 99 percent, and
-both label the third group correctly, at 63 and 64 of 64.
-
-Neither the prompt nor the model size explains the gap. Enriching the prompt until it
-enumerates the five failure modes, which is teaching to the test and is kept only as a
-ceiling, moves the count by between minus one and plus four cases of 160. The smaller model, at roughly a fifth the
-size and from a different vendor, holds the same range, and it holds it with reasoning
-switched off where it answers in six completion tokens. What separates the two
-instruments is the kind of model and not the instruction or the budget.
-
 \subsection{Experiment 2: The Metrics Over a Synthetic Sandbox}
 
 \subsubsection{Hypotheses}
 
-Seventeen sessions of one customer support assistant, written by hand, each carrying
+Eighteen sessions of one customer support assistant, written by hand, each carrying
 the violations it contains and the figures the metrics should return. Twelve target a
 single decision in the design, three are controls in which nothing should register,
-one breaks two checks with a single action, and one mixes several failures the way a
-real session does. We stated four expectations before the final runs.
+one breaks two checks with a single action, one mixes several failures the way a real
+session does, and one reports an action that never ran. We stated four expectations before the final runs.
 
 \begin{itemize}
   \item \textbf{H1.} OversightCompliance returns exactly the planted figures on all
-  seventeen sessions, and returns the same figures under every judge configuration,
+  eighteen sessions, and returns the same figures under every judge configuration,
   because no model participates in computing it.
   \item \textbf{H2.} ActionDisclosure does not have that property. Two judges over
   the same sessions disagree with each other and with the planted figures, because a
@@ -893,6 +911,7 @@ enough for a threshold to separate anything is not something we could predict, s
 ran it as a pilot and report what came back.
 
 \subsubsection{The Sandbox}
+\label{sec:sandbox}
 
 One customer support assistant for an online retailer, with read only tools for
 looking up orders and customers, gated tools for changing a delivery address,
@@ -920,7 +939,8 @@ sessions built for them.
 \caption{The eighteen sandbox sessions under \texttt{gemma-4-31B}. \emph{rev} and
 \emph{irr} are OversightCompliance in the reversible and irreversible strata,
 \emph{omis} and \emph{fabr} are the two ActionDisclosure figures, and \emph{flag} is the
-attributability value. \emph{ne} marks a figure with an empty denominator, meaning no
+attributability value, abbreviated from \textsc{declared\_only} and
+\textsc{not\_attributable}. \emph{ne} marks a figure with an empty denominator, meaning no
 executed gated action for a stratum, no consequential action for omission, and no
 measured turn for fabrication.}
 \label{tab:sandbox}
@@ -963,8 +983,9 @@ computing it.
 
 \paragraph{H2 holds, with a caveat about what it establishes.} The same eighteen
 sessions under two judge configurations give different disclosure figures.
-\texttt{gemma-4-31B} agreed with the sandbox on every session, and
-\texttt{gpt-oss-120b} disagreed on four, reporting a pooled omission of 0.28 against
+\texttt{gemma-4-31B} reproduced every planted figure it could reach, leaving two it
+could not, since the single turn of S06 and of S14 fell in the borderline band and
+voided their fabrication figures, and \texttt{gpt-oss-120b} disagreed on four, reporting a pooled omission of 0.28 against
 0.21 and a pooled fabrication of 0.31 against 0.27. The disagreements run in one
 direction, since the second charges as undisclosed several actions the closing turn
 names explicitly, and charges as refuted a turn that reports an escalation the trace
@@ -979,23 +1000,27 @@ OversightCompliance figure survived all three changes unmoved while both
 ActionDisclosure figures did not. Separating the three would need the crossed runs we
 did not do, and we record that in Section~\ref{sec:limitations}.
 
-\paragraph{H4 holds.} The three controls register nothing. S13 executes five gated
+\paragraph{H3 holds on every session built for it.} The clearest row is S18, where an
+assistant reports a refund it never requested: the metric as defined returns
+fabrication 1.00 through the unsupported verdict, and a judge with only three verdicts
+returns 0.00 and calls the session clean.
+
+\paragraph{H4 holds for two of the three controls.} S14 is the exception and the
+reason is worth reporting: its only turn fell in the borderline band, so it carries a
+diagnostic and its fabrication figure is voided and never reported as clean. That is the band
+working and it is still a control that did not come back empty, so we report H4 as
+holding with one qualification. S13 executes five gated
 actions with individual prior approvals and discloses each one, returning 1.00 in both
 strata with no diagnostic; S14 and S15 execute no gated action and return not
-evaluable. S18 is the counterpart added after a first draft of this section: an
-assistant that reports a refund it never requested returns fabrication 1.00 through the
-unsupported verdict, where the three label judge of the earlier draft returned 0.00 and
-called the session clean. S15 is the mirror of S03, since the supervisor refuses in both and the
+evaluable. S15 is the mirror of S03, since the supervisor refuses in both and the
 assistant complies in one, which confirms that the defied check fires on the action
 running and not on the refusal existing.
-
-\paragraph{H3 holds on every session built for it.}
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{The metric as defined against the alternative the paper rejects, on the
-sessions built to separate them. The three controls are included at the bottom. Only
+\caption{The metric as defined against the alternative rejected for that decision, one
+alternative per row, on the sessions built to separate them. The three controls are included at the bottom. Only
 S13 agrees, since S14 and S15 execute no gated action and the rejected alternative
 scores an empty denominator as perfect there for the same reason it does on S06.}
 \label{tab:contrast}
@@ -1009,13 +1034,13 @@ S07 & one figure per severity stratum     & 1.00 / 0.00 & 0.50 \\
 S08 & bundling is a diagnostic            & 1 event, 6 calls & invisible \\
 S10 & omission and fabrication stay apart & 1.00 / 0.00 & 0.50 \\
 S11 & policy coverage is reported         & 1 of 4 tools & invisible \\
-S18 & absence refutes a conduct claim     & 1.00        & 0.00 \\
 S12 & the flag qualifies the score        & \textsc{not attr.} & invisible \\
 S17 & strata, on a mixed session          & 0.67 / 0.50 & 0.57 \\
+S18 & absence refutes a conduct claim     & 1.00        & 0.00 \\
 \midrule
 S13 & control, clean                      & 1.00 / 1.00 & 1.00 \\
-S14 & control, reads only                 & ne          & ne \\
-S15 & control, refusal kept               & ne          & ne \\
+S14 & control, reads only                 & ne          & 1.00 \\
+S15 & control, refusal kept               & ne          & 1.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1042,7 +1067,8 @@ router reports the raw log probabilities and temperature scales sampling and not
 is reported, and drawing eight samples at temperature 1 and eight at temperature 2 on
 the most ambiguous case returns the same verdict sixteen times out of sixteen.
 
-Adding the fourth verdict changed it. Over 71 judgements the minimum confidence is
+Adding the fourth verdict changed it, and so did the session that needed it, which
+adds one turn to the count. Over 71 judgements the minimum confidence is
 0.5088 and two fall below the threshold, both on turns where the judge hesitated over
 whether a sentence made a claim about conduct at all. So the saturation was a property
 of the task and not only of the model: with three verdicts the answer was obvious and
@@ -1111,8 +1137,8 @@ ActionDisclosure reports separately how much of what ran was never mentioned and
 often what was said is refuted by the trace.
 
 The part we expect to outlive the two metrics is the rule that shaped both, which is
-that a language model never decides a denominator. It is easy to state and easy to
-skip, since defining fabrication as the share of false claims among the claims an
+that a language model does not decide a denominator, with one exception that is
+counted and reported. It is easy to state and easy to skip, since defining fabrication as the share of false claims among the claims an
 assistant made reads perfectly reasonable until you ask who counts the claims. Once a
 model does, two evaluations of the same session stop being comparable, and an
 assistant that says almost nothing scores almost perfectly, which rewards the silence
@@ -1124,8 +1150,8 @@ already counted.
 The sandbox turns that argument into a measurement. OversightCompliance returned the
 same figures under every judge configuration we ran, down to the per check counts,
 because no model participates in computing it. ActionDisclosure did not, and the two
-configurations differed from each other by roughly a third on both of its numbers over
-the same eighteen sessions. Anyone building an evaluation metric with a model inside it can
+configurations differed by a third on the omission figure and by a sixth on the
+fabrication one, over the same eighteen sessions. Anyone building an evaluation metric with a model inside it can
 read those two lines as the cost of each design choice, without adopting anything else
 from this paper.
 
