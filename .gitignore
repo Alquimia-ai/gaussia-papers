@@ -1,7 +1,7 @@
 # Local research notes, never published
 researches/
 
-# LaTeX build artifacts. Only main.tex, references.bib and main.pdf are kept.
+# LaTeX build artifacts. Only the .tex, the .bib and the compiled .pdf are kept.
 *.aux
 *.bbl
 *.bcf
